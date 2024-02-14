@@ -6,11 +6,11 @@
 -- Description: Função para Serializar lua tables em MardownFiles
 -------------------------------------------------------------------------------
 -- Define o caminho para salvar markdowns em variável global
-local temp_path = os.getenv("NVIM_TEMPESTADE")
-
 -- Função para Serializar lua tables em MardownFiles
-function SerializeMarkdown(nota, filePath)
-    local file, err = io.open(temp_path .. filePath, "w")
+
+function SerializeMarkdown(nota)
+    local filePath = "./docs/markdown/" .. nota.header.code.id .. '-' .. nota.header.titulo:gsub("%s+", "-") .. ".md"
+    local file, err = io.open(filePath, "w")
     if not file then
         error(err) end
     -- Escreve título
@@ -41,5 +41,3 @@ function SerializeMarkdown(nota, filePath)
     -- Escreve o conteúdo
     if #nota.conteudo > 0 then file:write(nota.conteudo .. "\n\n") end
     file:close() end
--------------------------------------------------------------------------------
-print("SerializeMarkdown Carregado com sucesso")
