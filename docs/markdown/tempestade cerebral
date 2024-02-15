@@ -1,0 +1,68 @@
+# tempestade cerebral
+
+------ links ------------------------------------------------------------------
+Notas Índices Temáticos
+ZettelVim
+índices temáticos
+PraFazer
+Niklas Luhmman
+PraFazer
+índices temáticos
+rede de informação interconectada
+zettelkasten
+hyperlinks
+-------------------------------------------------------------------------------
+
+Aqui estarão listadas todas as palavras de nossa tempestade cerebral, onde poderão\
+ser acessadas, no modo normal, através do comando:
+
+    ```<leader>gg```
+
+e, no modo visual, pelo comando:
+
+    ```gf```
+
+Caso um termo não exista em nosso glossário ao utilizar estes comandos, o arquivo\
+será automaticamente criado com um título e adicionado à lista do glossário.
+
+Este projeto pretende se utilizar das técnicas desenvolvidas por Niklas Luhmman\
+em seu esquema de organização de notas, zettelkasten, uma espécie de protótipo de\
+hyperlinks, onde cada nota possui um código que representa de onde ela veio, e\
+na nota em que foi tirada a informação é adicionado o código da nova nota,\
+interligando as duas de forma bidirecional, ou seja, não só a nova nota tem uma\
+referência de onde veio mas a nova nota tem uma referencia de novas notas criadas\
+a partir dela, caso existam.
+
+Este processo produzirá uma rede de informação interconectada, e podemos testar\
+esta funcionalidade escolhendo um termo deste nosso texto para detalhar mais\
+suas definições. Como por exemplo, "hyperlinks".
+
+Uma outra abordagem que implementaremos será a criação de notas índices temáticos\
+que funcionarão de forma similar à esta, porém, serão adicioandas ao seu "Glossário"\
+notas que compartilham um mesmo tema. Isto facilitará a navegação entre os arquivos\
+de mesmo tema e permitirá a conexão entre as notas de forma indireta, sem que a\
+nota A referencie a nota B diretamente, teremos uma nota Tema-X, onde A e B serão\
+conectadas.
+
+Para testarmos esta funcionalidade vamos criar uma nota índice com tema PraFazer.
+
+## ---- Glossário
+tempestade cerebral
+hyperlinks
+priberam
+Niklas Luhmman
+zettelkasten
+Conrad Gessner
+Renato Matos
+legenda automática do youtube
+linguagem de marcação
+rede de informação interconectada
+Conrad Gessner
+PraFazer
+Notas Índices Temáticos
+ZettelVim
+Terra
+digitar
+tempestade
+Nota Índice Ciências da Terra
+Geologia

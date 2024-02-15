@@ -9,35 +9,29 @@
 -- Função para Serializar lua tables em MardownFiles
 
 function SerializeMarkdown(nota)
-    local filePath = "./docs/markdown/" .. nota.header.code.id .. '-' .. nota.header.titulo:gsub("%s+", "-") .. ".md"
+    local filePath = "./docs/markdown/" .. nota.header.titulo .. ".md"
     local file, err = io.open(filePath, "w")
     if not file then
         error(err) end
     -- Escreve título
-    if #nota.header.titulo > 0 then
-        file:write("# " .. nota.header.titulo)
+    if nota.header.titulo then
+        file:write("# " .. nota.header.titulo .. "\n")
     end
-    -- Escreve o código
-    if #nota.header.code.id > 0 then
-        file:write(' -  ' .. nota.header.code.id .. "\n")
-        file:write("Data: " .. os.date("%c", nota.header.code.time) .. "\n")
+    -- Escreve a data
+    if nota.header.time then
+        print(nota.header.time)
+        file:write("Data: " .. os.date("%c", nota.header.time) .. "\n")
         file:write("\n")
     end
     -- Escreve os links
-    if #nota.links > 0 then
-        file:write('### Links\n')
-        for _, link in ipairs(nota.links) do
-            file:write("- " .. link .. "\n")
+    if #nota.header.links > 0 then
+        print(nota.header.links.length)
+        file:write('---- Links --------------------------------------------------------------------\n')
+        for n, link in ipairs(nota.header.links) do
+            file:write("[" .. n .. '] ' .. link .. "\n")
         end
-    end
-    -- Escreve os tags
-    if #nota.tags > 0 then
-        file:write('### Tags\n')
-        for _, tag in ipairs(nota.tags) do
-            file:write("- " .. tag .. "\n")
-        end
-        file:write("\n")
-    end
+        file:write("-------------------------------------------------------------------------------\n\n")
     -- Escreve o conteúdo
-    if #nota.conteudo > 0 then file:write(nota.conteudo .. "\n\n") end
+    if nota.conteudo then file:write(nota.conteudo .. "\n") end
     file:close() end
+end

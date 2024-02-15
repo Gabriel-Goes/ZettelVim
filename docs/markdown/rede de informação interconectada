@@ -1,0 +1,22 @@
+# Rede de informação interconectada
+
+---- links ---------------------------------------------------------------------
+#tempestade cerebral
+--------------------------------------------------------------------------------
+
+Um ambiente onde a informação não necessariamente atravessam seu conjunto de\
+objetos de forma linear, podendo apresentar fluxos não-lineares, ou seja, se o\
+objeto A se comunica com o objeto B, necessariamente B se comunicará com A e ambos podem\
+se comunicar com outros objetos, onde A, para se comunicar com C, não necessáriamente\
+precisa se comunicar com B.
+
+    A<->B<->C<->A
+
+    B<->C<->A<->B
+
+    C<->A<->B<->C
+
+As três apresentações são iguais, onde qualquer objeto se comunica com qualquer\
+outro objeto sem necessariaemnte precisar se comunicar com um terceiro para tal.\
+Isso possibilita que qualquer a informação seja facilmente acessível de forma\
+direta e intuitiva.

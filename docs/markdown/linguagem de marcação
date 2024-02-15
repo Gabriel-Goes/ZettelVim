@@ -1,0 +1,17 @@
+# Linguagem de marcação
+
+---- links ---------------------------------------------------------------------
+hyperlinks
+--------------------------------------------------------------------------------
+
+Linguagens de marcação são desenvolvidas para organizar textos e apresentá-los
+de forma visualmente elegante, muito utilizadas no ambiente da Web e em formatação
+de textos. Uma das linguagens de marcação mais importante é o LaTex para textos
+acadêmicos, para o ambiente Web seria o HTML. Nós estamos utilizando neste projeto
+o markdown como linguagem de marcação.
+
+Apesar do Neovim, nosso editor de textos, não renderizar o Markdown, como um editor
+de texto rico ou um visualizador de Markdown, é interessante utilizarmos esta
+linguagem porque ela é amplamente utilizada possibilitando uma maior facilidade
+na interação entre nosso ambiente de desenvolvimento e os ambientes que normalmente
+são utilizados.

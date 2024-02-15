@@ -10,11 +10,8 @@
 Nota_Estudo = {
     header = {
         titulo = '',
-          code = {
-              id = '',
-              time = os.time()},
+        time = os.time(),
+        links = {},
     },
-    tags = {},
-    links = {},
     conteudo = [[]],
 }

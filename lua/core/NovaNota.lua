@@ -7,21 +7,16 @@
 -------------------------------------------------------------------------------
 local MinhaNovaNota = Notas
 -- Função para criar novas notas
-function NovaNota (titulo, conteudo, tags, links)
+function NovaNota (titulo, conteudo, links)
     MinhaNovaNota = {
         header = {
             titulo = titulo,
-            code = {
-                id = '1',
-                time = os.time()
-            }
+            time = os.time(),
+            links = links or {}
         },
-        tags = tags or {},
-        links = links or {},
-        conteudo = conteudo,
-        subnotas = {}
+        conteudo = conteudo
     }
-    local fileName = "./docs/TempestadeCerebral/" .. MinhaNovaNota.header.code.id .. '-' .. titulo:gsub("%s+", "_") .. ".lua"
+    local fileName = "./docs/TempestadeCerebral/" .. titulo .. ".lua"
     local file, er = io.open(fileName, "w")
     if file then
         SerializeWithVarName(titulo, MinhaNovaNota, fileName) file:close()
