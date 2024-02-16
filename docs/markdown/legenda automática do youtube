@@ -1,9 +1,0 @@
-# Legenda automática do youtube
-
----- links ---------------------------------------------------------------------
-#Renato Matos
---------------------------------------------------------------------------------
-
-Este comando é capaz de adquirir legendas automáticas de vídeos do youtube:
-
-    ytplayer.config.args.raw_player_response.captions.playerCaptionsTracklistRenderer.captionTracks[0].baseUrl
