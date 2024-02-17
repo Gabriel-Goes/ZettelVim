@@ -30,3 +30,4 @@ vim.keymap.set("v", "zf", function()
     -- abre o arquivo alvo
     vim.cmd("e " .. tempestade_path .. selection)
 end, {noremap = true, silent = true})
+print('Hello, from zettelvim.lua.config')

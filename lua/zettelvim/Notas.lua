@@ -15,3 +15,4 @@ Nota_Estudo = {
     },
     conteudo = [[]],
 }
+print('zettelvim.Notas carregado com sucesso!')

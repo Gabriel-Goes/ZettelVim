@@ -1,11 +1,11 @@
 -- Author: Gabriel Góes Rocha de Lima
 -- Email: gabrielgoes@usp.br
 -- Date: 2024-02-08
--- Last Modified: 2024-02-08
+-- Last Modified: 2024-02-17
 -- Version: 0.1
 -- License: GPL
 -- Description: Pluggin para transformar o neovim em um zettelkasten machine
--- ZettelVim/lua/zettelvim.lua
+-- ZettelVim/zettelvim/lua/utils.lua
 
 ---- Configurações ------------------------------------------------------------
 -------------------------------------------------------------------------------
@@ -189,4 +189,4 @@ function ZettleVimCreateorFind(nota_alvo)
     add_link_biderecional(nota_fonte, nota_alvo)
 end
 -------------------------------------------------------------------------------
-print("ZettleVim carregado com sucesso")
+print('Hello, from zettelvim.lua.utils')

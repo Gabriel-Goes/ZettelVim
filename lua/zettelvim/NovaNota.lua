@@ -23,3 +23,4 @@ function NovaNota (titulo, conteudo, links)
     else error(er .. " -> " .. fileName .. " -> " .. os.date())
     end
 end
+print('lua.zettelvim.NovaNota carregado com sucesso!')
