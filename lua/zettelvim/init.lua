@@ -1,2 +1,2 @@
 print('Hello, from zettelvim.lua.init')
-require('config')
+require('zettelvim.config')
