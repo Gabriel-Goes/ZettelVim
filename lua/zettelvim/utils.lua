@@ -28,6 +28,7 @@ end
 -- Tratar todos os arquivos de um diretório como Markdown mesmo sem a extensão
 local function setMarkdownFileType()
     -- Cria autocmd que chama setMarkdonwFileType para arquivos em tempestade_path
+    print("Iniciando autocmd para setar o filetype para markdown")
     vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"},{
                                  pattern = "*",
                                  callback = function()
