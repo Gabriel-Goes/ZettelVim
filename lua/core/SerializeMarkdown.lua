@@ -35,3 +35,4 @@ function SerializeMarkdown(nota)
     if nota.conteudo then file:write(nota.conteudo .. "\n") end
     file:close() end
 end
+print("SerializeMarkdown.lua carregado com sucesso!")
