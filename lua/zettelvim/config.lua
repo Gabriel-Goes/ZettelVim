@@ -6,14 +6,11 @@
 -- License: GPL 3.0
 -- ZettelVim/lua/zettelvim/config.lua
 -------------------------------------------------------------------------------
-print('Hello, from zettelvim.lua.config')
 -- Configurações do ZettelVim
 local utils = require('zettelvim.utils')
 local tempestade_path = utils.get_tempestade_path()
 -------------------------------------------------------------------------------
-local M = {}
-print("Definindo NormalCall")
-function M.NormalCall()
+function NormalCall()
     -- Salva o arquivo atual
     vim.cmd("w")
     local nota_alvo = vim.fn.expand("<cword>")
@@ -21,8 +18,7 @@ function M.NormalCall()
     -- abre o arquivo alvo
     vim.cmd("e " .. tempestade_path .. nota_alvo)
     end
-print("Definindo VisualCall")
-function M.VisualCall()
+function VisualCall()
     vim.cmd("w") -- Salva o arquivo atual
     vim.cmd("normal! \"ay") -- Yank a seleção do buffer no visual mode, e apenas a seleção ao registro 'a'
     local selection = vim.fn.getreg("a") -- Imediatamente após o yan, obtém a seleção do registro 'a' e armazena na variável selection
@@ -30,5 +26,12 @@ function M.VisualCall()
     vim.fn.setreg("a", "") -- limpa o registro 'a'
     vim.cmd("e " .. tempestade_path .. selection) -- abre o arquivo alvo
 end
-print("lua/zettelvim/config.lua carregado com sucesso!")
+-- Mapeamento de teclas
+local M = {}
+function M.setup()
+    print('Configurando keymaps')
+    vim.api.nvim_set_keymap('n', '<leader>bf', ':lua NormalCall()<CR>', { noremap = true, silent = true })
+    vim.api.nvim_set_keymap('v', 'bf', ':lua VisualCall()<CR>', { noremap = true, silent = true })
+end
 return M
+-------------------------------------------------------------------------------

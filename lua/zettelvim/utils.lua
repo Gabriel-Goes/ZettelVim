@@ -6,7 +6,6 @@
 -- License: GPL
 -- Description: Pluggin para transformar o neovim em um zettelkasten machine
 -- ZettelVim/zettelvim/lua/utils.lua
-print('Hello, from zettelvim.lua.utils')
 ---- Configurações ------------------------------------------------------------
 local tempestade_path = os.getenv("NVIM_TEMPESTADE")
 -- Link Head e Tail
@@ -14,7 +13,6 @@ local link_line_head = '------ links -------------------------------------------
 local link_line_tail = '-------------------------------------------------------------------------------'
 -- DEBUG
 local function print_table(t, indent)
-    print("Iniciando print_table")
     indent = indent or ""
     for k, v in pairs(t) do
         if type(v) == "table" then
@@ -26,7 +24,6 @@ local function print_table(t, indent)
     end
 end
 -- Tratar todos os arquivos de um diretório como Markdown mesmo sem a extensão
-print("Iniciando autocmd para setar o filetype para markdown")
 local function setMarkdownFileType()
     -- Cria autocmd que chama setMarkdonwFileType para arquivos em tempestade_path
     vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"},{
@@ -191,7 +188,7 @@ function M.ZettelVimCreateorFind(nota_alvo)
     -- Adiciona link biderecional entre nota_fonte e nota_alvo
     local nota_fonte = vim.fn.expand("%:t")
     add_link_biderecional(nota_fonte, nota_alvo)
+    print("Nota " ..  nota_alvo .. " conectada com sucesso!")
 end
 -------------------------------------------------------------------------------
-print("lua/zettelvim/utils.lua carregado com sucesso")
 return M
