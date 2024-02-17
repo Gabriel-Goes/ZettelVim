@@ -12,6 +12,7 @@ local utils = require('zettelvim.utils')
 local tempestade_path = utils.get_tempestade_path()
 -------------------------------------------------------------------------------
 local M = {}
+print("Definindo NormalCall")
 function M.NormalCall()
     -- Salva o arquivo atual
     vim.cmd("w")
