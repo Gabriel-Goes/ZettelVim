@@ -5,29 +5,23 @@
 -- Version: 0.1
 -- License: GPL
 -- Description: Pluggin para transformar o neovim em um zettelkasten machine
+-- ZettelVim/lua/zettelvim.lua
 
 ---- Configurações ------------------------------------------------------------
--- local core_path = "/home/ggrl/projetos/ZettelVim/core?.lua;"
--- local testes_path = "/home/ggrl/projetos/ZettelVim/core/testes?.lua;"
--- package.path = core_path .. testes_path .. package.path
-require("core")
-require("core.testes")
-
 -- Path para o diretório de tempestade cerebral
 local tempestade_path = os.getenv("NVIM_TEMPESTADE")
-local markdown_path = tempestade_path .. '../markdown/'
 
 -- Tratar todos os arquivos de um diretório como Markdown mesmo sem a extensão
 local function setMarkdonwFileType()
     -- Obtém o caminho completo do arquivo atual
     local nota_fonte_path = vim.fn.expand("%:p")
-    -- verifica se o caminho atual começa com markdown_path
-    if nota_fonte_path:sub(1, #markdown_path) == tempestade_path then
-        -- Ajusta o filetype para markdow
+    -- verifica se o caminho da nota_fonte está dentro do tempestade_path
+    if nota_fonte_path:sub(1, #tempestade_path) == tempestade_path then
+        -- Ajusta o filetype para markdown
         vim.bo.filetype = "markdown"
     end
 end
--- Cria autocmd que chama setMarkdonwFileType para arquivos em markdown_path
+-- Cria autocmd que chama setMarkdonwFileType para arquivos em tempestade_path
 vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"},{
                              pattern = "*",
                              callback = setMarkdonwFileType})
@@ -55,7 +49,7 @@ end
 -- Função para adicionar link em Nota Índice Temático
 local function add_link_em_indice(nota_indice_tematico, nota_alvo)
     -- Adiciona a palavra ao arquivo "tempestade cerebral" como um indice
-    local index_file_path = markdown_path .. nota_indice_tematico
+    local index_file_path = tempestade_path .. nota_indice_tematico
     local index_file_content  = vim.fn.readfile(index_file_path)
     table.insert(index_file_content, nota_alvo)
     vim.fn.writefile(index_file_content, index_file_path)
@@ -124,7 +118,7 @@ local function get_links_from_link_header(link_header)
 end
 -- Função para processar os arquivos  e retornar os links
 local function processa_nota(nota)
-    local nota_path = markdown_path .. nota
+    local nota_path = tempestade_path .. nota
     local link_header = encontra_bloco_de_links_no_buffer_atual()
     local links = get_links_from_link_header(link_header)
     return links, nota_path
@@ -175,7 +169,7 @@ function ZettleVimCreateorFind(nota_alvo)
         return
     end
     -- Pega o caminho da nota_alvo
-    local nota_alvo_path = markdown_path .. nota_alvo
+    local nota_alvo_path = tempestade_path .. nota_alvo
     -- Checa se a nota_alvo existe
     if vim.fn.filereadable(nota_alvo_path) == 0 then
         -- Cria o arquivo com:
@@ -195,15 +189,15 @@ function ZettleVimCreateorFind(nota_alvo)
 end
 -------------------------------------------------------------------------------
 ---- CreatorFind Normal Mode
-vim.keymap.set("n", "<leader>gg", function()
+vim.keymap.set("n", "<leader>zf", function()
     vim.cmd("w")
     local nota_alvo = vim.fn.expand("<cword>")
     ZettleVimCreateorFind(nota_alvo)
     -- abre o arquivo alvo
-    vim.cmd("e " .. markdown_path .. nota_alvo)
+    vim.cmd("e " .. tempestade_path .. nota_alvo)
 end, {noremap = true, silent = true})
 ---- CreatorFind Visual Mode
-vim.keymap.set("v", "gF", function()
+vim.keymap.set("v", "zf", function()
     -- Salva o arquivo atual
     vim.cmd("w")
     -- Yank a seleção do buffer no visual mode, e apenas a seleção ao registro 'a'
@@ -215,8 +209,7 @@ vim.keymap.set("v", "gF", function()
     -- limpa o registro 'a'
     vim.fn.setreg("a", "")
     -- abre o arquivo alvo
-    vim.cmd("e " .. markdown_path .. selection)
+    vim.cmd("e " .. tempestade_path .. selection)
 end, {noremap = true, silent = true})
 -------------------------------------------------------------------------------
 print("ZettleVim carregado com sucesso")
-
