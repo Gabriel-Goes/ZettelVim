@@ -21,6 +21,7 @@ function M.NormalCall()
     -- abre o arquivo alvo
     vim.cmd("e " .. tempestade_path .. nota_alvo)
     end
+print("Definindo VisualCall")
 function M.VisualCall()
     vim.cmd("w") -- Salva o arquivo atual
     vim.cmd("normal! \"ay") -- Yank a seleção do buffer no visual mode, e apenas a seleção ao registro 'a'
@@ -29,4 +30,5 @@ function M.VisualCall()
     vim.fn.setreg("a", "") -- limpa o registro 'a'
     vim.cmd("e " .. tempestade_path .. selection) -- abre o arquivo alvo
 end
+print("lua/zettelvim/config.lua carregado com sucesso!")
 return M

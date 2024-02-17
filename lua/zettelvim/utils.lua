@@ -193,4 +193,5 @@ function M.ZettelVimCreateorFind(nota_alvo)
     add_link_biderecional(nota_fonte, nota_alvo)
 end
 -------------------------------------------------------------------------------
+print("lua/zettelvim/utils.lua carregado com sucesso")
 return M
