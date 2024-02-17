@@ -5,7 +5,6 @@
 -- License: GPL-3.0
 -- Description: Função para serializar uma lua table em um arquivo.lua
 -------------------------------------------------------------------------------
---
 local function removerAcentos(str)
     local accents = {
         ['á'] = 'a', ['é'] = 'e', ['í'] = 'i', ['ó'] = 'o', ['ú'] = 'u',
@@ -24,7 +23,6 @@ local function removerAcentos(str)
     str = str:gsub("%s+", "_")
     return str
 end
---
 -- Inicia a serialização com o nome da variável
 function SerializeWithVarName(varName, o, filePath)
     local file, err = io.open(filePath, 'w')
