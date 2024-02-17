@@ -6,32 +6,15 @@
 -- License: GPL
 -- Description: Pluggin para transformar o neovim em um zettelkasten machine
 -- ZettelVim/zettelvim/lua/utils.lua
-
+print('Hello, from zettelvim.lua.utils')
 ---- Configurações ------------------------------------------------------------
--------------------------------------------------------------------------------
--- Path para o diretório de tempestade cerebral
 local tempestade_path = os.getenv("NVIM_TEMPESTADE")
-
--- Tratar todos os arquivos de um diretório como Markdown mesmo sem a extensão
-local function setMarkdonwFileType()
-    -- Obtém o caminho completo do arquivo atual
-    local nota_fonte_path = vim.fn.expand("%:p")
-    -- verifica se o caminho da nota_fonte está dentro do tempestade_path
-    if nota_fonte_path:sub(1, #tempestade_path) == tempestade_path then
-        -- Ajusta o filetype para markdown
-        vim.bo.filetype = "markdown"
-    end
-end
--- Cria autocmd que chama setMarkdonwFileType para arquivos em tempestade_path
-vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"},{
-                             pattern = "*",
-                             callback = setMarkdonwFileType})
 -- Link Head e Tail
 local link_line_head = '------ links ------------------------------------------------------------------'
 local link_line_tail = '-------------------------------------------------------------------------------'
--------------------------------------------------------------------------------
 -- DEBUG
 local function print_table(t, indent)
+    print("Iniciando print_table")
     indent = indent or ""
     for k, v in pairs(t) do
         if type(v) == "table" then
@@ -42,18 +25,21 @@ local function print_table(t, indent)
         end
     end
 end
--------------------------------------------------------------------------------
--- Transformando uma palavra é um título, Capitalize First Letter
-local function capitalizeFirstLetter(str)
-    return (str:gsub("^.", string.upper))
-end
--- Função para adicionar link em Nota Índice Temático
-local function add_link_em_indice(nota_indice_tematico, nota_alvo)
-    -- Adiciona a palavra ao arquivo "tempestade cerebral" como um indice
-    local index_file_path = tempestade_path .. nota_indice_tematico
-    local index_file_content  = vim.fn.readfile(index_file_path)
-    table.insert(index_file_content, nota_alvo)
-    vim.fn.writefile(index_file_content, index_file_path)
+-- Tratar todos os arquivos de um diretório como Markdown mesmo sem a extensão
+local function setMarkdownFileType()
+    -- Cria autocmd que chama setMarkdonwFileType para arquivos em tempestade_path
+    vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"},{
+                                 pattern = "*",
+                                 callback = function()
+        -- Obtém o caminho completo do arquivo atual
+        local nota_fonte_path = vim.fn.expand("%:p")
+        -- verifica se o caminho da nota_fonte está dentro do tempestade_path
+        if nota_fonte_path:sub(1, #tempestade_path) == tempestade_path then
+            -- Ajusta o filetype para markdown
+            vim.bo.filetype = "markdown"
+        end
+    end,
+    })
 end
 --------------- ZettelVim - Notas de conexões Bidirecionais  ------------------
 -- Função para obter o número do buffer atual - Buffer da nota_fonte
@@ -100,7 +86,7 @@ local function encontra_bloco_de_links_no_buffer_atual()
     return encontra_bloco_de_links_recursivamente(root, bufrn)
 end
 -- Teste da função principal para encontrar o bloco de links no buffer atual.
---print(encontra_bloco_de_links_no_buffer_atual())
+-- print(encontra_bloco_de_links_no_buffer_atual())
 -------------------------------------------------------------------------------
 -- Função para obter os links link_header
 local function get_links_from_link_header(link_header)
@@ -161,9 +147,26 @@ local function add_link_biderecional(nota_fonte, nota_alvo)
         add_fonte_em_links_de_alvo(nota_fonte, nota_alvo)
     end
 end
--------------------- ZettleVimCreateorFind(nota_alvo) -------------------------
+-- Transformando uma palavra é um título, Capitalize First Letter
+local function capitalizeFirstLetter(str)
+    return (str:gsub("^.", string.upper))
+end
+-- Função para adicionar link em Nota Índice Temático
+local function add_link_em_indice(nota_indice_tematico, nota_alvo)
+    -- Adiciona a palavra ao arquivo "tempestade cerebral" como um indice
+    local index_file_path = tempestade_path .. nota_indice_tematico
+    local index_file_content  = vim.fn.readfile(index_file_path)
+    table.insert(index_file_content, nota_alvo)
+    vim.fn.writefile(index_file_content, index_file_path)
+end
+-------------------------------------------------------------------------------
+local M = {}
+function M.get_tempestade_path()
+    return tempestade_path
+end
+-------------------- ZettelVimCreateorFind(nota_alvo) -------------------------
 -- Função para criar ou encontrar uma nota
-function ZettleVimCreateorFind(nota_alvo)
+function M.ZettelVimCreateorFind(nota_alvo)
     -- Verifica se a palavra é vazia
     if nota_alvo == "" then
         print("Sem palavras, tsc tsc tsc...")
@@ -189,4 +192,4 @@ function ZettleVimCreateorFind(nota_alvo)
     add_link_biderecional(nota_fonte, nota_alvo)
 end
 -------------------------------------------------------------------------------
-print('Hello, from zettelvim.lua.utils')
+return M
