@@ -5,6 +5,10 @@
 -- Version: 0.1
 -- License: GPL 3.0
 
+-- Configurações do ZettelVim
+local tempestade_path = require('zettelvim.utils').tempestade_path
+local ZettleVimCreateorFind = require('zettelvim.utils').ZettleVimCreateorFind
+
 -------------------------------------------------------------------------------
 ---- CreatorFind Normal Mode
 vim.keymap.set("n", "<leader>zf", function()
