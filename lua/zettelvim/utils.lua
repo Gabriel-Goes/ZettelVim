@@ -8,6 +8,7 @@
 -- ZettelVim/zettelvim/lua/utils.lua
 ---- Configurações ------------------------------------------------------------
 local tempestade_path = os.getenv("NVIM_TEMPESTADE")
+print(' -> Tempestade Path: ' .. tempestade_path)
 -- Link Head e Tail
 local link_line_head = '------ links ------------------------------------------------------------------'
 local link_line_tail = '-------------------------------------------------------------------------------'
@@ -24,21 +25,19 @@ local function print_table(t, indent)
     end
 end
 -- Tratar todos os arquivos de um diretório como Markdown mesmo sem a extensão
-local function setMarkdownFileType()
-    -- Cria autocmd que chama setMarkdonwFileType para arquivos em tempestade_path
-    vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"},{
-                                 pattern = "*",
-                                 callback = function()
-        -- Obtém o caminho completo do arquivo atual
-        local nota_fonte_path = vim.fn.expand("%:p")
-        -- verifica se o caminho da nota_fonte está dentro do tempestade_path
-        if nota_fonte_path:sub(1, #tempestade_path) == tempestade_path then
-            -- Ajusta o filetype para markdown
-            vim.bo.filetype = "markdown"
-        end
-    end,
-    })
+local function setMarkdonwFileType()
+    -- Obtém o caminho completo do arquivo atual
+    local nota_fonte_path = vim.fn.expand("%:p")
+    -- verifica se o caminho da nota_fonte está dentro do tempestade_path
+    if nota_fonte_path:sub(1, #tempestade_path) == tempestade_path then
+        -- Ajusta o filetype para markdown
+        vim.bo.filetype = "markdown"
+    end
 end
+-- Cria autocmd que chama setMarkdonwFileType para arquivos em tempestade_path
+vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"},{
+                             pattern = "*",
+                             callback = setMarkdonwFileType})
 --------------- ZettelVim - Notas de conexões Bidirecionais  ------------------
 -- Função para obter o número do buffer atual - Buffer da nota_fonte
 local function get_buffer_atual(bufrn)
@@ -56,9 +55,12 @@ local function nodo_contem_setext_heading(nodo, bufrn)
     local lines = vim.api.nvim_buf_get_lines(bufrn, start_row, end_row + 1, false)
     for _, line in ipairs(lines) do
         if line:match(link_line_head) then
+            print(' Link Header Encontrado')
+            print(' Linha: ' .. line)
 
             return true
         end
+        print(' Link Header Não Encontrado')
     end
     return false
 end
@@ -78,9 +80,7 @@ end
 -- Função principal para encontrar o bloco de links no buffer atual.
 local function encontra_bloco_de_links_no_buffer_atual()
     local bufrn = get_buffer_atual()
-    print("bufrn: ", bufrn)
     local root = get_arvore_de_sintaxe(bufrn)
-    print("root: ", root)
     return encontra_bloco_de_links_recursivamente(root, bufrn)
 end
 -- Teste da função principal para encontrar o bloco de links no buffer atual.
@@ -88,6 +88,7 @@ end
 -------------------------------------------------------------------------------
 -- Função para obter os links link_header
 local function get_links_from_link_header(link_header)
+    print(' -> Link Header: ' .. #link_header)
     -- Cria uma tabela para armazenar os links
     local links = {}
     -- itera sobre as linhas do bloco, começando da segunda linha e terminando na penúltima
@@ -95,14 +96,21 @@ local function get_links_from_link_header(link_header)
     for i = 2, #link_header - 1 do
         -- Adiciona a linha atual ao bloco de links
         local link = link_header[i]
-        if link then
-            table.insert(links, link)
+        print(' -> Link: ' .. link)
+        if link and link:trim() ~= "" then
+            if not links[link] then
+                links[link] = true
+            end
         end
     end
+    local link_count = 0
+    for _ in pairs(links) do link_count = link_count + 1 end
+    print(' Número de Links: ' .. #links)
     return links
 end
 -- Função para processar os arquivos  e retornar os links
 local function processa_nota(nota)
+    print(' -> Iniciando Processamento de Nota: ' .. nota)
     local nota_path = tempestade_path .. nota
     local link_header = encontra_bloco_de_links_no_buffer_atual()
     local links = get_links_from_link_header(link_header)
@@ -111,8 +119,6 @@ end
 -- Função para Adicionar link para o nota_fonte no arquivo alvo
 local function add_fonte_em_links_de_alvo(nota_fonte, nota_alvo)
     local links_de_alvo, nota_alvo_path = processa_nota(nota_alvo)
-    print(" Conteúdo de links_de_alvo antes de verificar existencia:")
-    print_table(links_de_alvo)
     -- Verifica se o link já existe no bloco de links
     local link_em_alvo_existe = false
     if vim.tbl_contains(links_de_alvo, nota_fonte) then
@@ -125,25 +131,28 @@ local function add_fonte_em_links_de_alvo(nota_fonte, nota_alvo)
         table.insert(nota_alvo_content, 4, nota_fonte)
         vim.fn.writefile(nota_alvo_content, nota_alvo_path)
     end
-    print(" Conteúdo de links_de_alvo depois de verificar existencia:")
-    print_table(links_de_alvo)
 end
 -- Função para Adicionar Link Biderecional entre dois arquivos
 local function add_link_biderecional(nota_fonte, nota_alvo)
     local links_de_fonte, nota_fonte_path = processa_nota(nota_fonte)
-    -- checa se bloco de links de nota_fonte possui link para nota_alvo
+    print('Nota Fonte: ' .. nota_fonte)
+    print('Nota Alvo: ' .. nota_alvo)
     local link_em_fonte_existe = false
+    -- checa se bloco de links de nota_fonte possui link para nota_alvo
     if vim.tbl_contains(links_de_fonte, nota_alvo) then
         link_em_fonte_existe = true
+        print('Link em Fonte Existe')
     end
     -- se nota_fonte não possui link para nota_alvo
     if not link_em_fonte_existe then
+        print('Link em Fonte Não Existe')
         -- Adiciona a nota_alvo ao bloco de links da nota_fonte
         local nota_fonte_content = vim.fn.readfile(nota_fonte_path)
         table.insert(nota_fonte_content, 4, nota_alvo)
         vim.fn.writefile(nota_fonte_content, nota_fonte_path)
         add_fonte_em_links_de_alvo(nota_fonte, nota_alvo)
     end
+    print('')
 end
 -- Transformando uma palavra é um título, Capitalize First Letter
 local function capitalizeFirstLetter(str)
@@ -174,21 +183,15 @@ function M.ZettelVimCreateorFind(nota_alvo)
     local nota_alvo_path = tempestade_path .. nota_alvo
     -- Checa se a nota_alvo existe
     if vim.fn.filereadable(nota_alvo_path) == 0 then
-        -- Cria o arquivo com:
-        -- título
-        -- e pula linha,
-        -- link_line_head,
-        -- link_line_tail
-        -- e pula linha
+        print("Nota '" ..  nota_alvo .. "' não existe, criando...")
         local titulo = "# " .. capitalizeFirstLetter(nota_alvo)
         vim.fn.writefile({titulo, '', link_line_head, link_line_tail, ''}, nota_alvo_path)
-        -- Adiciona link à nota índice temático 'tempestade cerebral'
-        add_link_em_indice("tempestade cerebral", nota_alvo)
+        print("Nota '" ..  nota_alvo .. "' criada com sucesso!")
     end
     -- Adiciona link biderecional entre nota_fonte e nota_alvo
     local nota_fonte = vim.fn.expand("%:t")
     add_link_biderecional(nota_fonte, nota_alvo)
-    print("Nota " ..  nota_alvo .. " conectada com sucesso!")
+    print("Nota '" ..  nota_alvo .. "' conectada com sucesso à nota '" .. nota_fonte .. "'!")
 end
 -------------------------------------------------------------------------------
 return M
