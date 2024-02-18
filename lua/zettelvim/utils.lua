@@ -8,22 +8,10 @@
 -- ZettelVim/zettelvim/lua/utils.lua
 ---- Configurações ------------------------------------------------------------
 local tempestade_path = os.getenv("NVIM_TEMPESTADE")
-print(' -> Tempestade Path: ' .. tempestade_path)
 -- Link Head e Tail
 local link_line_head = '------ links ------------------------------------------------------------------'
 local link_line_tail = '-------------------------------------------------------------------------------'
 -- DEBUG
-local function print_table(t, indent)
-    indent = indent or ""
-    for k, v in pairs(t) do
-        if type(v) == "table" then
-            print(indent .. tostring(k) .. ":")
-            print_table(v, indent .. "  ")
-        else
-            print(indent .. tostring(k) .. ": " .. tostring(v))
-        end
-    end
-end
 function string.trim(s)
     return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
@@ -219,6 +207,7 @@ function M.ZettelVimCreateorFind(nota_alvo)
     local nota_fonte = vim.fn.expand("%:t")
     add_link_biderecional(nota_fonte, nota_alvo)
     print("Nota '" ..  nota_alvo .. "' conectada com sucesso à nota '" .. nota_fonte .. "'!")
+    add_link_em_indice("tempestade cerebral", nota_alvo)
 end
 -------------------------------------------------------------------------------
 return M
