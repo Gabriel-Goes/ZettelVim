@@ -11,6 +11,7 @@ local utils = require('zettelvim.utils')
 local tempestade_path = utils.get_tempestade_path()
 local ZettelVimCreateorFind = utils.ZettelVimCreateorFind
 -------------------------------------------------------------------------------
+print(' -> Testando')
 local M = {}
 function M.NormalCall()
     print('Normal Call')
@@ -27,6 +28,8 @@ function M.VisualCall()
     vim.cmd("w") -- Salva o arquivo atual
     vim.cmd("normal! \"ay") -- Yank a seleção do buffer no visual mode, e apenas a seleção ao registro 'a'
     local selection = vim.fn.getreg("a") -- Imediatamente após o yan, obtém a seleção do registro 'a' e armazena na variável selection
+    selection = selection:gsub("\n", " ") -- Substitui quebras de linha por espaços
+    selection = selection:gsub("%c", " ") -- Substitui ^@ por espaços
     print('Seleção atual: ' .. selection) -- Imprime a seleção atual
     ZettelVimCreateorFind(selection) -- Chama a função ZettelVimCreateorFind com a seleção
     vim.fn.setreg("a", "") -- limpa o registro 'a'

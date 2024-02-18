@@ -33,7 +33,7 @@ Contribuições para o ZettelVim são bem-vindas! Se você tem ideias para melho
 
 ## Licença
 
-Este projeto é distribuido sob a licença GPL. Veja o arquivo `LICENSE` para mais detalhes.
+Este projeto é distribuido sob a licença GPL-3.0. Veja o arquivo `LICENSE` para mais detalhes.
 
 ## Reconhecimentos
 
