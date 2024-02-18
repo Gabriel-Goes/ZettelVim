@@ -24,6 +24,9 @@ local function print_table(t, indent)
         end
     end
 end
+function string.trim(s)
+    return (s:gsub("^%s*(.-)%s*$", "%1"))
+end
 -- Tratar todos os arquivos de um diretório como Markdown mesmo sem a extensão
 local function setMarkdonwFileType()
     -- Obtém o caminho completo do arquivo atual
@@ -64,6 +67,16 @@ local function nodo_contem_setext_heading(nodo, bufrn)
     end
     return false
 end
+-- Função para obter o texto do node
+local function get_node_text(node, bufrn)
+    local start_row, start_col, end_row, end_col = node:range()
+    local lines = vim.api.nvim_buf_get_lines(bufrn, start_row, end_row + 1, false)
+    if #lines > 0 then
+        lines[#lines] = string.sub(lines[#lines], 1, end_col)
+        lines[1] = string.sub(lines[1], start_col + 1)
+    end
+    return lines
+end
 -- Função recursiva para encontrar o bloco de links na árvore de sintaxe.
 local function encontra_bloco_de_links_recursivamente(node, bufrn)
     if node:type() == "setext_heading" and nodo_contem_setext_heading(node, bufrn) then
@@ -81,32 +94,46 @@ end
 local function encontra_bloco_de_links_no_buffer_atual()
     local bufrn = get_buffer_atual()
     local root = get_arvore_de_sintaxe(bufrn)
-    return encontra_bloco_de_links_recursivamente(root, bufrn)
+    local node = encontra_bloco_de_links_recursivamente(root, bufrn)
+    if node then
+        local link_header_lines = get_node_text(node, bufrn)
+        return link_header_lines
+    end
+    return nil
 end
 -- Teste da função principal para encontrar o bloco de links no buffer atual.
 -- print(encontra_bloco_de_links_no_buffer_atual())
 -------------------------------------------------------------------------------
 -- Função para obter os links link_header
 local function get_links_from_link_header(link_header)
-    print(' -> Link Header: ' .. #link_header)
+    print(' -> Iniciando Processamento de Links')
     -- Cria uma tabela para armazenar os links
     local links = {}
-    -- itera sobre as linhas do bloco, começando da segunda linha e terminando na penúltima
-    -- para ignorar as linhas de link_header e link_tail
-    for i = 2, #link_header - 1 do
-        -- Adiciona a linha atual ao bloco de links
-        local link = link_header[i]
-        print(' -> Link: ' .. link)
-        if link and link:trim() ~= "" then
-            if not links[link] then
-                links[link] = true
+    local unique_links = {}
+    if type (link_header) == "table" and #link_header > 2 then
+        print(' -> Link Header com ' .. (#link_header -2) .. ' links')
+        -- itera sobre as linhas do bloco, começando da segunda linha e terminando na penúltima
+        -- para ignorar as linhas de link_header e link_tail
+        for i = 2, #link_header - 1 do
+            -- Adiciona a linha atual ao bloco de links
+            local link = link_header[i]:trim()
+            print(' -> Link: ' .. link)
+            if link:trim() ~= "" and not unique_links[link] then
+                unique_links[link] = true
+                table.insert(links, link)
+                print(' -> Link Adicionado: ' .. link)
+                end
             end
+        else
+            print(' -> Link Header com 0 links')
         end
+        print(' Número de Links: ' .. #links)
+        return links
     end
-    local link_count = 0
-    for _ in pairs(links) do link_count = link_count + 1 end
-    print(' Número de Links: ' .. #links)
-    return links
+        if not string.trim then
+            function string.trim(s)
+                return s:match("^%s*(.-)%s*$")
+            end
 end
 -- Função para processar os arquivos  e retornar os links
 local function processa_nota(nota)
