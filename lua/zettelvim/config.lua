@@ -11,7 +11,6 @@ local utils = require('zettelvim.utils')
 local tempestade_path = utils.get_tempestade_path()
 local ZettelVimCreateorFind = utils.ZettelVimCreateorFind
 -------------------------------------------------------------------------------
-print(' -> Testando')
 local M = {}
 function M.NormalCall()
     print('Normal Call')
@@ -38,9 +37,7 @@ end
 
 function M.setup(opts)
     vim.api.nvim_set_keymap('v', opts.visual_mode_keymap or 'bf', '<cmd>lua require("zettelvim.config").VisualCall()<CR>', { noremap = true, silent = true })
-    print(' -> Normal Mode Keymap: ' .. opts.normal_mode_keymap)
     vim.api.nvim_set_keymap('n', opts.normal_mode_keymap or '<leader>bf', '<cmd>lua require("zettelvim.config").NormalCall()<CR>', { noremap = true, silent = true })
-    print(' -> Visual Mode Keymap: ' .. opts.visual_mode_keymap)
 end
 
 return M

@@ -171,8 +171,11 @@ local function add_link_biderecional(nota_fonte, nota_alvo)
 end
 -- Transformando uma palavra é um título, Capitalize First Letter
 local function capitalizeFirstLetter(str)
-    return (str:gsub("^.", string.upper))
+    return (str:gsub("(%a)([%w_']*)", function(first, rest)
+        return first:upper() .. rest:lower()
+    end))
 end
+
 -- Função para adicionar link em Nota Índice Temático
 local function add_link_em_indice(nota_indice_tematico, nota_alvo)
     -- Adiciona a palavra ao arquivo "tempestade cerebral" como um indice
