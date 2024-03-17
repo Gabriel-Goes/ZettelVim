@@ -7,7 +7,20 @@
 -- Description: Pluggin para transformar o neovim em um zettelkasten machine
 -- ZettelVim/zettelvim/lua/utils.lua
 ---- Configurações ------------------------------------------------------------
-local tempestade_path = os.getenv("NVIM_TEMPESTADE")
+-- Caminho para o diretório de notas
+local tempestade_path = os.getenv('NVIM_TEMPESTADE') or vim.fn.expand("~/docs/TempestadeCerebral/")
+
+-- verfica se o diretório de notas foi definido
+if vim.fn.isdirectory(tempestade_path) == 0 then
+    print("Diretório de notas não encontrado: " .. tempestade_path)
+    print('Criando ...')
+    vim.fn.mkdir(tempestade_path, "p")
+    return
+end
+-- define a variável de ambiente para sessão do Neovim
+vim.fn.setenv("NVIM_TEMPESTADE", tempestade_path)
+-- Verifica
+print(vim.fn.getenv("NVIM_TEMPESTADE"))
 -- Link Head e Tail
 local link_line_head = '------ links ------------------------------------------------------------------'
 local link_line_tail = '-------------------------------------------------------------------------------'
@@ -26,9 +39,10 @@ local function setMarkdonwFileType()
     end
 end
 -- Cria autocmd que chama setMarkdonwFileType para arquivos em tempestade_path
-vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"},{
+vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
                              pattern = "*",
-                             callback = setMarkdonwFileType})
+                             callback = setMarkdonwFileType,
+                         })
 --------------- ZettelVim - Notas de conexões Bidirecionais  ------------------
 -- Função para obter o número do buffer atual - Buffer da nota_fonte
 local function get_buffer_atual(bufrn)
