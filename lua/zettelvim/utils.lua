@@ -21,7 +21,7 @@ end
 vim.fn.setenv("NVIM_TEMPESTADE", tempestade_path)
 -- Verifica
 print(vim.fn.getenv("NVIM_TEMPESTADE"))
-prin('Oi')
+print('Oi')
 -- Link Head e Tail
 local link_line_head = '------ links ------------------------------------------------------------------'
 local link_line_tail = '-------------------------------------------------------------------------------'
