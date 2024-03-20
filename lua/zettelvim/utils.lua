@@ -20,8 +20,7 @@ end
 -- define a variável de ambiente para sessão do Neovim
 vim.fn.setenv("NVIM_TEMPESTADE", tempestade_path)
 -- Verifica
-print(vim.fn.getenv("NVIM_TEMPESTADE"))
-print('Oi')
+-- print(vim.fn.getenv("NVIM_TEMPESTADE"))
 -- Link Head e Tail
 local link_line_head = '------ links ------------------------------------------------------------------'
 local link_line_tail = '-------------------------------------------------------------------------------'
