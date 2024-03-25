@@ -36,8 +36,8 @@ function M.VisualCall()
 end
 
 function M.setup(opts)
-    vim.api.nvim_set_keymap('v', opts.visual_mode_keymap or 'bf', '<cmd>lua require("zettelvim.config").VisualCall()<CR>', { noremap = true, silent = true })
-    vim.api.nvim_set_keymap('n', opts.normal_mode_keymap or '<leader>bf', '<cmd>lua require("zettelvim.config").NormalCall()<CR>', { noremap = true, silent = true })
+    vim.api.nvim_set_keymap('v', opts.visual_mode_keymap or 'qf', '<cmd>lua require("zettelvim.config").VisualCall()<CR>', { noremap = true, silent = true })
+    vim.api.nvim_set_keymap('n', opts.normal_mode_keymap or '<leader>qf', '<cmd>lua require("zettelvim.config").NormalCall()<CR>', { noremap = true, silent = true })
 end
 
 return M
