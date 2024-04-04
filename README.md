@@ -33,6 +33,9 @@ ZettelVim organiza o conhecimento em notas individuais dentro de um diretório c
 
 Contribuições para o ZettelVim são bem-vindas! Se você tem ideias para melhorias, correções de bugs ou novas funcionalidades, sinta-se à vontade para abrir uma issue ou enviar um pull request.
 
+## Próximos Passos
+    [] Placar de Menções;    
+
 ## Licença
 
 Este projeto é distribuido sob a licença GPL-3.0. Veja o arquivo `LICENSE` para mais detalhes.
