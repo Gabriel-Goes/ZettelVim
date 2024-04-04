@@ -9,7 +9,7 @@ ZettelVim é um ambiente de escrita de notas para estudos no Neovim, usando Lua 
 - **Notas Índices Temáticos**: Se achar interessante, organize notas em temas específicos, aumentando a conexão entre notas de mesma temática.
 - **Flexibilidade e Extensibilidade**: Desenvolvido com lua e aproveitando o poder do Treesitter para análise sintática, oferecendo uma base para expanões futuras e customizações.
 
-![Alt text](~/zettelvim2.gif)
+![Alt text](https://raw.githubusercontent.com/Gabriel-Goes/ZettelVim/main/zettelvim2.gif)
 
 ## Início Rápido
 
