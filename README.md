@@ -19,8 +19,8 @@ Para começar a usar o ZettelVim, siga estes passos:
 
 ## Comandos Básicos
 
-- Para criar uma nova nota, use `<leader>gg` com o cursor sobre a palavra desejada.
-- No modo visual, o comando `gF` permite acessar termos compostos por mais de uma palavra selecionadas.
+- Para criar uma nova nota, use `<leader>qff` com o cursor sobre a palavra desejada.
+- No modo visual, o comando `qff` permite acessar termos compostos por mais de uma palavra selecionadas.
 - Notas automaticamente criadas são adicionadas ao glossário, e seus links são gerenciados automaticamente.
 
 ## Estrutura do Projeto
