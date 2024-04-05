@@ -35,6 +35,32 @@ function M.VisualCall()
     vim.cmd("e " .. tempestade_path .. selection) -- abre o arquivo alvo
 end
 
+function M.openWikipediaPage(text)
+    text = text:gsub(" ", "_")
+    local url = "https://en.wikipedia.org/wiki/" .. text
+    local command = vim.fn.has('win32') == 1 and "start" or "xdg-open"
+    vim.fn.system(command .. " " .. vim.fn.shellescape(url))
+end
+
+function M.searchWikipedia()
+    local mode = vim.api.nvim_get_mode().mode
+    local text = nil
+    if mode == 'n' then
+        text = vim.fn.expand("<cword>")
+        print('Texto: ' .. text)
+    elseif mode == 'v' or mode == 'V' or mode == '' then
+        vim.cmd("normal! \"ay") -- Yank a seleção do buffer no visual mode, e apenas a seleção ao registro 'a'
+        text = vim.fn.getreg("a") -- Imediatamente após o yan, obtém a seleção do registro 'a' e armazena na variável selection
+    end
+    if text and text ~= '' then
+        vim.ui.input({ prompt = 'Search Wikipedia: ', default = text} , function(input_text)
+            if input_text and input_text ~= "" then M.openWikipediaPage(input_text) end
+        end)
+    else
+        print('modo não suportado')
+    end
+end
+
 function M.setup(opts)
     vim.api.nvim_set_keymap('v', opts.visual_mode_keymap or 'qf',
         '<cmd>lua require("zettelvim.config").VisualCall()<CR>',
@@ -42,6 +68,13 @@ function M.setup(opts)
     vim.api.nvim_set_keymap('n', opts.normal_mode_keymap or '<leader>qf',
         '<cmd>lua require("zettelvim.config").NormalCall()<CR>',
         { noremap = true, silent = true })
+    -- Search Wikipedia
+    vim.api.nvim_set_keymap('n', opts.wiki_normal_mode_keymap or '<leader>ws',
+        '<cmd>lua require("zettelvim.config").searchWikipedia()<CR>',
+        {noremap = true, silent = true})
+    vim.api.nvim_set_keymap('v', opts.wiki_visual_mode_keymap or 'ws',
+        '<cmd>lua require("zettelvim.config").searchWikipedia()<CR>',
+        {noremap = true, silent = true})
 end
 
 return M
