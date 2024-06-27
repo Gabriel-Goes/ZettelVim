@@ -1,8 +1,8 @@
 -- Autor: Gabriel Góes
 -- Email: gabrielgoes@usp.br
 -- Date: 2024-02-17
--- Last Modified: 2024-02-17
--- Version: 0.1
+-- Last Modified: 2024-06-27
+-- Version: 0.1.1
 -- License: GPL 3.0
 -- ZettelVim/lua/zettelvim/config.lua
 -------------------------------------------------------------------------------
@@ -10,6 +10,7 @@
 local utils = require('zettelvim.utils')
 local tempestade_path = utils.get_tempestade_path()
 local ZettelVimCreateorFind = utils.ZettelVimCreateorFind
+local wikipedia_lang = 'pt'
 -------------------------------------------------------------------------------
 local M = {}
 function M.NormalCall()
@@ -37,7 +38,7 @@ end
 
 function M.openWikipediaPage(text)
     text = text:gsub(" ", "_")
-    local url = "https://en.wikipedia.org/wiki/" .. text
+    local url = "https://" .. wikipedia_lang .. ".wikipedia.org/wiki/" .. text
     local command = vim.fn.has('win32') == 1 and "start" or "xdg-open"
     vim.fn.system(command .. " " .. vim.fn.shellescape(url))
 end
@@ -53,8 +54,11 @@ function M.searchWikipedia()
         text = vim.fn.getreg("a") -- Imediatamente após o yan, obtém a seleção do registro 'a' e armazena na variável selection
     end
     if text and text ~= '' then
-        vim.ui.input({ prompt = 'Search Wikipedia: ', default = text} , function(input_text)
-            if input_text and input_text ~= "" then M.openWikipediaPage(input_text) end
+        vim.ui.input({ prompt = 'Search Wikipedia (pt/en): ', default = 'pt'}, function(lang)
+            if lang and lang ~= '' then wikipedia_lang = lang end
+            vim.ui.input({ prompt = 'Search Wikipedia: ', default = text} , function(input_text)
+                if input_text and input_text ~= '' then M.openWikipediaPage(input_text) end
+            end)
         end)
     else
         print('modo não suportado')

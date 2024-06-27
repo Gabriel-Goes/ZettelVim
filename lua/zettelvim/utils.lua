@@ -1,8 +1,8 @@
 -- Author: Gabriel Góes Rocha de Lima
 -- Email: gabrielgoes@usp.br
 -- Date: 2024-02-08
--- Last Modified: 2024-02-17
--- Version: 0.1
+-- Last Modified: 2024-06-27
+-- Version: 0.1.1
 -- License: GPL
 -- Description: Pluggin para transformar o neovim em um zettelkasten machine
 -- ZettelVim/zettelvim/lua/utils.lua
@@ -18,13 +18,14 @@ if vim.fn.isdirectory(tempestade_path) == 0 then
     return
 end
 
--- define a variável de ambiente para sessão do Neovim
 vim.fn.setenv("NVIM_TEMPESTADE", tempestade_path)
--- Verifica
--- print(vim.fn.getenv("NVIM_TEMPESTADE"))
--- Link Head e Tail
+
+-- Link e ranking Head e Tail
 local link_line_head = '```links'
 local link_line_tail= '```'
+local ranking_line_head = '```ranking'
+local ranking_line_tail = '```'
+
 -- DEBUG
 function string.trim(s)
     return (s:gsub("^%s*(.-)%s*$", "%1"))
@@ -61,8 +62,54 @@ local function get_arvore_de_sintaxe(bufrn)
     return nodo
 end
 
+
+local function nodo_contem_ranking_block(nodo, bufrn)
+    local start_row, _, end_row, _ = nodo:range()
+    local lines = vim.api.nvim_buf_get_lines(bufrn, start_row, end_row + 1, false)
+    for _, line in ipairs(lines) do
+        if line:match(ranking_line_head) then
+            return true
+        end
+    end
+    return false
+end
+
+local function encontra_bloco_de_ranking_recursivamente(node, bufrn)
+    if node:type() == "fenced_code_block" and nodo_contem_ranking_block(node, bufrn) then
+        return node
+    end
+    for child_node in node:iter_children() do
+        local result = encontra_bloco_de_ranking_recursivamente(child_node, bufrn)
+        if result then
+            return result
+        end
+    end
+    return nil
+end
+
+-- Função para obter o texto do node
+local function get_node_text(nodo, bufrn)
+    local start_row, start_col, end_row, end_col = nodo:range()
+    local lines = vim.api.nvim_buf_get_lines(bufrn, start_row, end_row + 1, false)
+    if #lines > 0 then
+        lines[#lines] = string.sub(lines[#lines], 1, end_col)
+        lines[1] = string.sub(lines[1], start_col + 1)
+    end
+    return lines
+end
+
+local function encontra_bloco_de_ranking_no_buffer_atual()
+    local bufrn = get_buffer_atual()
+    local root = get_arvore_de_sintaxe(bufrn)
+    local node = encontra_bloco_de_ranking_recursivamente(root, bufrn)
+    if node then
+        local ranking_header_lines = get_node_text(node, bufrn)
+        return ranking_header_lines
+    end
+    return nil
+end
+
 -- Função auxiliar para verificar se o nó contém o padrão de "setext_heading"
---
 local function nodo_contem_links(nodo, bufrn)
     local start_row, _, end_row, _ = nodo:range()
     local lines = vim.api.nvim_buf_get_lines(bufrn, start_row, end_row + 1, false)
@@ -75,17 +122,6 @@ local function nodo_contem_links(nodo, bufrn)
         print(' Link Header Não Encontrado')
     end
     return false
-end
-
--- Função para obter o texto do node
-local function get_node_text(nodo, bufrn)
-    local start_row, start_col, end_row, end_col = nodo:range()
-    local lines = vim.api.nvim_buf_get_lines(bufrn, start_row, end_row + 1, false)
-    if #lines > 0 then
-        lines[#lines] = string.sub(lines[#lines], 1, end_col)
-        lines[1] = string.sub(lines[1], start_col + 1)
-    end
-    return lines
 end
 
 -- Função recursiva para encontrar o bloco de links na árvore de sintaxe.
@@ -204,14 +240,69 @@ local function capitalizeFirstLetter(str)
     end))
 end
 
--- Função para adicionar link em Nota Índice Temático
 local function add_link_em_indice(nota_indice_tematico, nota_alvo)
-    -- Adiciona a palavra ao arquivo a nota índice tematico como um indice
     local index_file_path = tempestade_path .. nota_indice_tematico
-    local index_file_content  = vim.fn.readfile(index_file_path)
-    table.insert(index_file_content, nota_alvo)
-    vim.fn.writefile(index_file_content, index_file_path)
+    local index_file_content = vim.fn.readfile(index_file_path)
+    local in_ranking_block = false
+    local links_count = {}
+    for _, line in ipairs(index_file_content) do
+        if line:match(ranking_line_head) then
+            in_ranking_block = true
+        elseif line:match(ranking_line_tail) then
+            in_ranking_block = false
+        elseif in_ranking_block then
+            local link, count = line:match("^(.-)%s*|%s*(%d+)$")
+            if link and count then
+                links_count[link] = tonumber(count)
+            else
+                links_count[line:trim()] = 1
+            end
+        end
+    end
+
+    if links_count[nota_alvo] then
+        links_count[nota_alvo] = links_count[nota_alvo] + 1
+    else
+        links_count[nota_alvo] = 1
+    end
+
+    local sorted_links = {}
+
+    for link, count in pairs(links_count) do
+        table.insert(sorted_links, {link = link, count = count})
+    end
+
+    table.sort(sorted_links, function(a, b)
+        return a.count > b.count
+    end)
+
+    local new_index_content = {}
+    local ranking_found = false
+    for _, line in ipairs(index_file_content) do
+        table.insert(new_index_content, line)
+        if line:match(ranking_line_head) then
+            ranking_found = true
+            break
+        end
+    end
+
+    if ranking_found then
+        for _, entry in ipairs(sorted_links) do
+            table.insert(new_index_content, entry.link .. " | " .. entry.count)
+        end
+        table.insert(new_index_content, ranking_line_tail)
+    else
+        table.insert(new_index_content, ranking_line_head)
+        for _, entry in ipairs(sorted_links) do
+            table.insert(new_index_content, entry.link .. " | " .. entry.count)
+        end
+        table.insert(new_index_content, ranking_line_tail)
+    end
+
+    vim.fn.writefile(new_index_content, index_file_path)
 end
+
+-- Função para adicionar link em Nota Índice Temático
 -------------------------------------------------------------------------------
 
 local M = {}
