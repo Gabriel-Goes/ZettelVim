@@ -9,7 +9,7 @@
 --
 ---- Configurações ------------------------------------------------------------
 -- Caminho para o diretório de notas
-local tempestade_path = os.getenv('NVIM_TEMPESTADE') or vim.fn.expand("~/docs/TempestadeCerebral/")
+local tempestade_path = os.getenv('NVIM_TEMPESTADE') or vim.fn.expand("~/docs/TempestaCerebralis/")
 -- verfica se o diretório de notas foi definido
 if vim.fn.isdirectory(tempestade_path) == 0 then
     print("Diretório de notas não encontrado: " .. tempestade_path)
@@ -330,7 +330,7 @@ function M.ZettelVimNovaNota(nota_alvo)
     local nota_fonte = vim.fn.expand("%:t")
     add_link_biderecional(nota_fonte, nota_alvo)
     print("Nota '" ..  nota_alvo .. "' conectada com sucesso à nota '" .. nota_fonte .. "'!")
-    add_link_em_indice("tempestade cerebral", nota_alvo)
+    add_link_em_indice("tempesta cerebralis", nota_alvo)
 end
 
 -------------------- ZettelVimCreateorFind(nota_alvo) -------------------------
@@ -354,7 +354,7 @@ function M.ZettelVimCreateorFind(nota_alvo)
     -- Adiciona link biderecional entre nota_fonte e nota_alvo
     add_link_biderecional(nota_fonte, nota_alvo)
     print("Nota '" ..  nota_alvo .. "' conectada com sucesso à nota '" .. nota_fonte .. "'!")
-    add_link_em_indice("tempestade cerebral", nota_alvo)
+    add_link_em_indice("tempesta cerebralis", nota_alvo)
 end
 
 -------------------------------------------------------------------------------
