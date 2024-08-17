@@ -34,7 +34,8 @@ ZettelVim organiza o conhecimento em notas individuais dentro de um diretório c
 Contribuições para o ZettelVim são bem-vindas! Se você tem ideias para melhorias, correções de bugs ou novas funcionalidades, sinta-se à vontade para abrir uma issue ou enviar um pull request.
 
 ## Próximos Passos
-    [] Placar de Menções;    
+    [x] Placar de Menções;
+    [ ] Função Wikipedia deve ser utilizável em qualquer parteo do neovim ( deve gerar uma nota com o termo e um link para o site da Wikipedia.
 
 ## Licença
 
