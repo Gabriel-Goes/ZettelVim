@@ -9,7 +9,7 @@
 --
 ---- Configurações ------------------------------------------------------------
 -- Caminho para o diretório de notas
-local tempestade_path = os.getenv('NVIM_TEMPESTADE') or vim.fn.expand("~/docs/TempestaCerebralis/")
+local tempestade_path = os.getenv('NVIM_TEMPESTADE') or vim.fn.expand("$USER/vidia/docs/TempestaCerebralis/")
 -- verfica se o diretório de notas foi definido
 if vim.fn.isdirectory(tempestade_path) == 0 then
     print("Diretório de notas não encontrado: " .. tempestade_path)
