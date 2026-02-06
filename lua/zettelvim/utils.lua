@@ -9,13 +9,32 @@
 --
 ---- Configurações ------------------------------------------------------------
 -- Caminho para o diretório de notas
-local tempestade_path = os.getenv('NVIM_TEMPESTADE') or vim.fn.expand("$HOME/vidia/docs/TempestaCerebralis/")
+local tempestade_path = os.getenv('NVIM_TEMPESTADE') or vim.fn.expand("$HOME/docs/TempestaCerebralis/")
 -- verfica se o diretório de notas foi definido
 if vim.fn.isdirectory(tempestade_path) == 0 then
     print("Diretório de notas não encontrado: " .. tempestade_path)
     print('Criando ...')
     vim.fn.mkdir(tempestade_path, "p")
-    return
+    -- if tempestade_path/'tempesta cerebralis' não exsite:
+    if vim.fn.isdirectory(tempestade_path) == 0 then
+        print("Erro ao criar diretório de notas: " .. tempestade_path)
+        return
+    end
+
+    -- criar arquivo 'tempesta cerebralis'
+    local tempesta_cerebralis_path = tempestade_path .. 'tempesta cerebralis'
+    if vim.fn.filereadable(tempesta_cerebralis_path) == 0 then
+        local tempesta_cerebralis_content = {
+            "# tempesta cerebralis",
+            "",
+            "```links",
+            "```",
+            "",
+            "```ranking",
+            "```",
+        }
+        vim.fn.writefile(tempesta_cerebralis_content, tempesta_cerebralis_path)
+    end
 end
 
 vim.fn.setenv("NVIM_TEMPESTADE", tempestade_path)
