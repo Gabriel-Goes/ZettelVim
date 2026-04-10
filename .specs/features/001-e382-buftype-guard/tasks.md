@@ -92,10 +92,10 @@ rg -n "is_nota_path|buffer_atual_e_nota|setMarkdonwFileType" lua/zettelvim/utils
 
 ### T2: Criar `SourceContext` e o resolvedor da fonte atual
 
-**What**: adicionar em `utils.lua` um resolvedor de contexto da fonte atual, incluindo `is_nota`, `source_ref`, `source_note_name`, `source_path` e `buftype`.
+**What**: adicionar em `utils.lua` um resolvedor de contexto da fonte atual, incluindo `is_nota`, `source_kind`, `source_ref`, `source_note_name`, `source_path`, `bufname` e `buftype`.
 **Where**: `lua/zettelvim/utils.lua`
 **Depends on**: T1
-**Reuses**: `vim.fn.expand`, `vim.bo.buftype`, `vim.fn.getcwd`, `os.getenv("USER")`, `vim.loop.os_gethostname()`
+**Reuses**: `vim.fn.expand`, `vim.bo.buftype`, `vim.bo.channel`, `vim.fn.getcwd`, `vim.api.nvim_buf_get_name`, `vim.api.nvim_get_chan_info`, `os.getenv("USER")`, `vim.loop.os_gethostname()`
 
 **Tools**:
 
@@ -106,16 +106,17 @@ rg -n "is_nota_path|buffer_atual_e_nota|setMarkdonwFileType" lua/zettelvim/utils
 
 - [ ] Existe uma função equivalente a `resolve_source_context()`
 - [ ] Quando a fonte é nota, `source_ref` representa o nome da nota fonte
-- [ ] Quando a fonte não é nota, `source_ref` segue o formato `{user}@{host} {cwd} ({buftype})`
-- [ ] Existem fallbacks seguros para `USER`, hostname e `buftype` vazios
+- [ ] Quando a fonte é terminal, `source_ref` prioriza `bufname` e inclui `argv0` quando disponível
+- [ ] Quando a fonte não é terminal, `source_ref` prioriza `bufname` útil e recua para `{user}@{host} {cwd} ({buftype})` quando necessário
+- [ ] Existem fallbacks seguros para `USER`, hostname, `bufname`, `argv0` e `buftype` vazios
 
 **Verify**:
 
 ```bash
-rg -n "resolve_source_context|source_ref|os_gethostname|getcwd|buftype" lua/zettelvim/utils.lua
+rg -n "resolve_source_context|source_kind|source_ref|os_gethostname|getcwd|bufname|get_chan_info|argv" lua/zettelvim/utils.lua
 ```
 
-**Expected**: o resolvedor e os campos do contexto aparecem exatamente uma vez no fluxo novo.
+**Expected**: o resolvedor e os campos do contexto aparecem exatamente uma vez no fluxo novo, incluindo o ramo específico para terminal.
 
 ---
 
@@ -347,7 +348,8 @@ nvim
 - [ ] `qf` ou `qff` em buffer não-nota não dispara `E382`
 - [ ] O buffer fonte não é modificado
 - [ ] A nota alvo é criada se não existir
-- [ ] A nota alvo recebe a referência `{user}@{host} {cwd} ({buftype})`
+- [ ] Em terminal, a nota alvo recebe referência rica com `bufname` e `argv0` quando disponível
+- [ ] Em buffers não-nota sem metadados ricos, o fallback continua legível e estável
 - [ ] O índice `tempesta cerebralis` incrementa a nota alvo
 
 **Verify**:
@@ -362,6 +364,7 @@ nvim
 - disparar o fluxo com `<leader>qf` ou `qff`
 - confirmar ausência de `E382`
 - confirmar no arquivo alvo que só ele foi modificado
+- confirmar que terminal usa referência rica e que outros casos degradam para fallback sem erro
 
 ---
 

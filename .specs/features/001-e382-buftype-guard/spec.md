@@ -99,11 +99,39 @@ referência da fonte).
 - **REQ-07**: O critério "é uma nota" deve ser consistente com a lógica de
   `setMarkdonwFileType()` — baseado no caminho do arquivo estar dentro de
   `tempestade_path`
+- **REQ-08**: Quando a fonte não é nota e `buftype == "terminal"`, a
+  referência escrita na `nota_alvo` deve preferir um formato mais rico baseado
+  no buffer real do terminal, preservando ao menos `bufname` e, quando
+  disponível, o executável principal do canal/job
+- **REQ-09**: Quando os metadados ricos não estiverem disponíveis, o fluxo deve
+  degradar para uma referência textual mínima legível, sem falhar o comando
 
 ## Definição: identificação da fonte em buffers não-nota
 
 Quando a fonte não é uma nota, a referência escrita no bloco `links` da
-nota_alvo deve conter informação mínima sobre a origem:
+nota_alvo deve conter informação legível sobre a origem, preferindo metadados
+do buffer quando eles existirem.
+
+### Prioridade de formatação
+
+1. **Buffer de terminal**: preferir
+
+```
+{user}@{host} {bufname} [argv:{argv0}]
+```
+
+Exemplo:
+
+`ggrl@GeoServer term://~/projetos/ZettelVim//3:/bin/sh [argv:/bin/bash]`
+
+2. **Outros buffers nomeados não-nota** (`help`, arquivos fora do vault, etc):
+
+```
+{user}@{host} {bufname} ({buftype})
+```
+
+3. **Fallback mínimo** quando não houver `bufname` útil ou não for possível
+obter metadados mais ricos:
 
 ```
 {user}@{host} {cwd} ({buftype})
@@ -114,11 +142,18 @@ Exemplo: `ggrl@GeoServer /home/ggrl/projetos/ZettelVim (terminal)`
 Obtido via:
 - `os.getenv("USER")` → user
 - `vim.loop.os_gethostname()` → host
+- `vim.api.nvim_buf_get_name(0)` → `bufname` do buffer atual
+- `vim.api.nvim_get_chan_info(vim.bo.channel)` → `argv` do terminal quando houver canal/job
 - `vim.fn.getcwd()` → cwd
 - `vim.bo.buftype` → tipo do buffer
 
-Esta é uma solução mínima viável. Captura de contexto mais rico (statusline
-do Claude/Codex, git branch, modelo em uso) fica para uma iteração futura.
+Campos efêmeros como `job_id`, `channel` e `pty` podem ser usados internamente
+para montar ou depurar a referência, mas não precisam ser persistidos no texto
+final da nota.
+
+Captura de contexto ainda mais rico (statusline do Claude/Codex, git branch,
+modelo em uso, inspeção de processos filhos do shell) fica para uma iteração
+futura.
 
 ## Escopo
 

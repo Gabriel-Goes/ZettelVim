@@ -81,7 +81,7 @@ graph TD
 | System | Integration Method |
 | --- | --- |
 | Buffer atual do Neovim | `vim.fn.expand`, `vim.bo.buftype`, `vim.fn.getcwd()` e `vim.api.nvim_get_current_buf()` |
-| Runtime do sistema | `os.getenv("USER")` e `vim.loop.os_gethostname()` para montar referência mínima da fonte não-nota |
+| Runtime do sistema | `os.getenv("USER")`, `vim.loop.os_gethostname()`, `vim.api.nvim_buf_get_name(0)` e `vim.api.nvim_get_chan_info(vim.bo.channel)` para montar referência rica da fonte não-nota |
 | Vault de notas | `vim.fn.readfile` e `vim.fn.writefile` para editar fonte/alvo e índice |
 | Fluxo existente do plugin | `config.lua` delega para `utils.lua` e continua responsável por keymap, captura de entrada e abertura do alvo |
 
@@ -91,15 +91,20 @@ graph TD
 
 ### Source Context Resolver
 
-- **Atende**: REQ-01, REQ-07
+- **Atende**: REQ-01, REQ-07, REQ-08, REQ-09
 - **Purpose**: classificar o buffer atual como nota ou não-nota e produzir a referência textual da fonte
 - **Location**: `lua/zettelvim/utils.lua`
 - **Interfaces**:
   - `is_nota_path(path): boolean` - retorna `true` quando o caminho está dentro de `tempestade_path`
   - `buffer_atual_e_nota(): boolean` - conveniência para `config.lua` decidir se pode executar `:write`
   - `resolve_source_context(): SourceContext` - retorna um contexto completo da fonte atual
-- **Dependencies**: `tempestade_path`, `vim.fn.expand`, `vim.bo.buftype`, `vim.fn.getcwd`, `os.getenv`, `vim.loop.os_gethostname`
+- **Dependencies**: `tempestade_path`, `vim.fn.expand`, `vim.bo.buftype`, `vim.bo.channel`, `vim.fn.getcwd`, `vim.api.nvim_buf_get_name`, `vim.api.nvim_get_chan_info`, `os.getenv`, `vim.loop.os_gethostname`
 - **Reuses**: a mesma regra de prefixo já usada por `setMarkdonwFileType()`
+- **Formatting rule**:
+  - se `is_nota == true`, `source_ref = source_note_name`
+  - se `buftype == "terminal"`, preferir `{user}@{host} {bufname} [argv:{argv0}]`
+  - para outros buffers nomeados, preferir `{user}@{host} {bufname} ({buftype})`
+  - se faltarem metadados úteis, degradar para `{user}@{host} {cwd} ({buftype})`
 
 ### Command Guard in `config.lua`
 
@@ -155,10 +160,13 @@ graph TD
 ```lua
 local source_context = {
     is_nota = true or false,
-    source_ref = "MinhaNota" or "ggrl@GeoServer /home/ggrl/projetos/ZettelVim (terminal)",
+    source_kind = "nota" or "terminal" or "buffer",
+    source_ref = "MinhaNota" or "ggrl@GeoServer term://~/projetos/ZettelVim//3:/bin/sh [argv:/bin/bash]",
     source_note_name = "MinhaNota" or nil,
     source_path = "/abs/path/do/buffer/atual",
+    bufname = "term://~/projetos/ZettelVim//3:/bin/sh" or "/usr/share/nvim/runtime/doc/helphelp.txt",
     buftype = "terminal" or "",
+    terminal_argv0 = "/bin/bash" or nil,
 }
 ```
 
@@ -194,7 +202,7 @@ local link_update_mode = {
 ### Scenario B: fonte atual nao e uma nota
 
 1. `config.lua` captura o alvo do cursor ou da seleção.
-2. `utils.resolve_source_context()` retorna `is_nota = false` e monta `source_ref` no formato `{user}@{host} {cwd} ({buftype})`.
+2. `utils.resolve_source_context()` retorna `is_nota = false` e monta `source_ref` priorizando o `bufname` do buffer; em terminal, inclui também `argv0` quando disponível.
 3. `config.lua` nao executa `vim.cmd("w")`.
 4. `ZettelVimCreateorFind()` garante que a nota alvo exista.
 5. `add_unidirectional_source_link()` escreve apenas `source_ref` no bloco `links` da nota alvo, evitando duplicação.
@@ -210,7 +218,7 @@ local link_update_mode = {
 | Buffer atual tem `buftype` especial e nao pode ser salvo | `config.lua` pula `:write` quando `source_context.is_nota == false` | evita `E382` e mantém o fluxo funcional |
 | `nota_alvo` nao existe | `ensure_note_exists()` cria o arquivo com o esqueleto padrão | comportamento continua transparente para o usuário |
 | Link ja existe no arquivo fonte ou alvo | `append_link_to_note_path()` faz no-op | evita duplicação de links |
-| `USER`, hostname ou `buftype` vierem vazios | `resolve_source_context()` aplica fallbacks seguros (`unknown-user`, `unknown-host`, `file`) | a nota alvo continua registrando origem legível |
+| `USER`, hostname, `bufname`, `argv0` ou `buftype` vierem vazios | `resolve_source_context()` aplica fallbacks seguros (`unknown-user`, `unknown-host`, `file`) e recua para formatos menos ricos | a nota alvo continua registrando origem legível |
 | Arquivo indice estiver ausente ou malformado | manter comportamento atual de `add_link_em_indice()` nesta iteração | fora do escopo desta feature; risco documentado, não expandido aqui |
 
 ---
@@ -221,7 +229,7 @@ local link_update_mode = {
 | --- | --- | --- |
 | Onde fazer a guarda de `:write` | Em `config.lua` | o problema acontece no comando acionado pelo usuário; a proteção deve ocorrer antes de qualquer tentativa de salvar |
 | Como identificar "é uma nota" | Extrair helper público reutilizando a regra de prefixo de `setMarkdonwFileType()` | garante consistência entre filetype e comportamento de criação de links |
-| Como representar fonte não-nota | String textual mínima `{user}@{host} {cwd} ({buftype})` | atende o spec sem depender de integrações extras ou parsing de statusline |
+| Como representar fonte não-nota | Referência textual rica baseada em `bufname`, com enriquecimento por `argv` em terminal e fallback para `{user}@{host} {cwd} ({buftype})` | melhora rastreabilidade sem depender de inspeção pesada de processo ou statusline |
 | Como atualizar links | Leitura/escrita direta no arquivo de nota, não no buffer atual | remove acoplamento ao buffer corrente e viabiliza fluxo unidirecional seguro |
 | O que preservar do fluxo atual | criação de nota, abertura do alvo e atualização do índice | reduz a mudança ao mínimo necessário para resolver o bug |
 
@@ -229,7 +237,7 @@ local link_update_mode = {
 
 ## Out of Scope
 
-- enriquecer a referência da fonte com branch git, nome do modelo ou statusline do Claude/Codex
+- enriquecer a referência da fonte com branch git, nome do modelo, statusline do Claude/Codex, ou inspeção de processos filhos além do job/canal principal
 - revisar `add_link_em_indice()` para tratar melhor arquivos índice ausentes ou inconsistentes
 - reestruturar os módulos legados de serialização
 - automatizar testes nessa fase de design

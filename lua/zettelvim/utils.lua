@@ -45,9 +45,26 @@ local link_line_tail= '```'
 local ranking_line_head = '```ranking'
 local ranking_line_tail = '```'
 
--- DEBUG
-function string.trim(s)
+local function trim(s)
+    if type(s) ~= "string" then
+        return ""
+    end
     return (s:gsub("^%s*(.-)%s*$", "%1"))
+end
+
+function string.trim(s)
+    return trim(s)
+end
+
+local function escape_lua_pattern(text)
+    return text:gsub("([^%w])", "%%%1")
+end
+
+local function is_nota_path(path)
+    if type(path) ~= "string" or path == "" then
+        return false
+    end
+    return path:sub(1, #tempestade_path) == tempestade_path
 end
 
 -- Tratar todos os arquivos de um diretório como Markdown mesmo sem a extensão
@@ -55,7 +72,7 @@ local function setMarkdonwFileType()
     -- Obtém o caminho completo do arquivo atual
     local nota_fonte_path = vim.fn.expand("%:p")
     -- verifica se o caminho da nota_fonte está dentro do tempestade_path
-    if nota_fonte_path:sub(1, #tempestade_path) == tempestade_path then
+    if is_nota_path(nota_fonte_path) then
         -- Ajusta o filetype para markdown
         vim.bo.filetype = "markdown"
     end
@@ -67,193 +84,256 @@ vim.api.nvim_create_autocmd({"BufRead", "BufNewFile"}, {
                              callback = setMarkdonwFileType,
                          })
 
---------------- ZettelVim - Notas de conexões Bidirecionais  ------------------
--- Função para obter o número do buffer atual - Buffer da nota_fonte
-local function get_buffer_atual(bufrn)
-    bufrn = bufrn or vim.api.nvim_get_current_buf()
-    return bufrn
+--------------- ZettelVim - Contexto e Persistência  --------------------------
+local function get_current_buffer_path()
+    local source_path = vim.fn.expand("%:p")
+    if source_path ~= "" then
+        return source_path
+    end
+    local ok, bufname = pcall(vim.api.nvim_buf_get_name, 0)
+    if ok and type(bufname) == "string" then
+        return bufname
+    end
+    return ""
 end
 
--- Função para obter a árvore de sintaxe do buffer com TreeSitter.
-local function get_arvore_de_sintaxe(bufrn)
-    local parser = vim.treesitter.get_parser(bufrn, "markdown")
-    local nodo = parser:parse()[1]:root()
-    return nodo
+local function buffer_atual_e_nota()
+    return is_nota_path(get_current_buffer_path())
 end
 
+local function get_note_name_from_path(path)
+    if not is_nota_path(path) then
+        return nil
+    end
+    return vim.fn.fnamemodify(path, ":t")
+end
 
-local function nodo_contem_ranking_block(nodo, bufrn)
-    local start_row, _, end_row, _ = nodo:range()
-    local lines = vim.api.nvim_buf_get_lines(bufrn, start_row, end_row + 1, false)
-    for _, line in ipairs(lines) do
-        if line:match(ranking_line_head) then
-            return true
+local function get_env_with_fallback(name, fallback)
+    local value = trim(os.getenv(name))
+    if value == "" then
+        return fallback
+    end
+    return value
+end
+
+local function get_hostname_with_fallback()
+    local ok, hostname = pcall(vim.loop.os_gethostname)
+    if not ok or trim(hostname) == "" then
+        return "unknown-host"
+    end
+    return hostname
+end
+
+local function get_current_bufname()
+    local ok, bufname = pcall(vim.api.nvim_buf_get_name, 0)
+    if not ok then
+        return ""
+    end
+    return trim(bufname)
+end
+
+local function get_current_channel()
+    local ok, channel = pcall(function()
+        return vim.bo.channel
+    end)
+    if not ok or type(channel) ~= "number" or channel == 0 then
+        return nil
+    end
+    return channel
+end
+
+local function get_terminal_argv0(channel)
+    if not channel then
+        return nil
+    end
+    local ok, info = pcall(vim.api.nvim_get_chan_info, channel)
+    if not ok or type(info) ~= "table" or type(info.argv) ~= "table" then
+        return nil
+    end
+    local argv0 = trim(info.argv[1])
+    if argv0 == "" then
+        return nil
+    end
+    return argv0
+end
+
+local function build_source_ref(source_context)
+    if source_context.is_nota and source_context.source_note_name then
+        return source_context.source_note_name
+    end
+
+    if source_context.source_kind == "terminal" and source_context.bufname ~= "" then
+        if source_context.terminal_argv0 then
+            return string.format("%s@%s %s [argv:%s]",
+                source_context.user,
+                source_context.host,
+                source_context.bufname,
+                source_context.terminal_argv0)
+        end
+        return string.format("%s@%s %s (%s)",
+            source_context.user,
+            source_context.host,
+            source_context.bufname,
+            source_context.buftype)
+    end
+
+    if source_context.bufname ~= "" then
+        return string.format("%s@%s %s (%s)",
+            source_context.user,
+            source_context.host,
+            source_context.bufname,
+            source_context.buftype)
+    end
+
+    return string.format("%s@%s %s (%s)",
+        source_context.user,
+        source_context.host,
+        source_context.cwd,
+        source_context.buftype)
+end
+
+local function resolve_source_context()
+    local source_path = get_current_buffer_path()
+    local source_note_name = get_note_name_from_path(source_path)
+    local bufname = get_current_bufname()
+    local raw_buftype = trim(vim.bo.buftype)
+    local buftype = raw_buftype ~= "" and raw_buftype or "file"
+    local source_kind = "buffer"
+    local channel = get_current_channel()
+    local terminal_argv0 = nil
+
+    if source_note_name then
+        source_kind = "nota"
+    elseif raw_buftype == "terminal" then
+        source_kind = "terminal"
+        terminal_argv0 = get_terminal_argv0(channel)
+    end
+
+    local source_context = {
+        is_nota = source_note_name ~= nil,
+        source_kind = source_kind,
+        source_note_name = source_note_name,
+        source_path = source_path ~= "" and source_path or bufname,
+        bufname = bufname,
+        buftype = buftype,
+        cwd = trim(vim.fn.getcwd()) ~= "" and vim.fn.getcwd() or ".",
+        user = get_env_with_fallback("USER", "unknown-user"),
+        host = get_hostname_with_fallback(),
+        channel = channel,
+        terminal_argv0 = terminal_argv0,
+    }
+
+    source_context.source_ref = build_source_ref(source_context)
+    return source_context
+end
+
+local function find_fenced_block_bounds(lines, block_head, block_tail)
+    local head_pattern = "^" .. escape_lua_pattern(block_head) .. "%s*$"
+    local tail_pattern = "^" .. escape_lua_pattern(block_tail) .. "%s*$"
+    local block_start = nil
+
+    for index, line in ipairs(lines) do
+        if not block_start and line:match(head_pattern) then
+            block_start = index
+        elseif block_start and line:match(tail_pattern) then
+            return block_start, index
         end
     end
-    return false
+
+    return nil, nil
 end
 
-local function encontra_bloco_de_ranking_recursivamente(node, bufrn)
-    if node:type() == "fenced_code_block" and nodo_contem_ranking_block(node, bufrn) then
-        return node
-    end
-    for child_node in node:iter_children() do
-        local result = encontra_bloco_de_ranking_recursivamente(child_node, bufrn)
-        if result then
-            return result
-        end
-    end
-    return nil
-end
-
--- Função para obter o texto do node
-local function get_node_text(nodo, bufrn)
-    local start_row, start_col, end_row, end_col = nodo:range()
-    local lines = vim.api.nvim_buf_get_lines(bufrn, start_row, end_row + 1, false)
-    if #lines > 0 then
-        lines[#lines] = string.sub(lines[#lines], 1, end_col)
-        lines[1] = string.sub(lines[1], start_col + 1)
-    end
-    return lines
-end
-
-local function encontra_bloco_de_ranking_no_buffer_atual()
-    local bufrn = get_buffer_atual()
-    local root = get_arvore_de_sintaxe(bufrn)
-    local node = encontra_bloco_de_ranking_recursivamente(root, bufrn)
-    if node then
-        local ranking_header_lines = get_node_text(node, bufrn)
-        return ranking_header_lines
-    end
-    return nil
-end
-
--- Função auxiliar para verificar se o nó contém o padrão de "setext_heading"
-local function nodo_contem_links(nodo, bufrn)
-    local start_row, _, end_row, _ = nodo:range()
-    local lines = vim.api.nvim_buf_get_lines(bufrn, start_row, end_row + 1, false)
-    for _, line in ipairs(lines) do
-        if line:match(link_line_head) then
-            print(' Link Header Encontrado')
-            print(' Linha: ' .. line)
-            return true
-        end
-        print(' Link Header Não Encontrado')
-    end
-    return false
-end
-
--- Função recursiva para encontrar o bloco de links na árvore de sintaxe.
-local function encontra_bloco_de_links_recursivamente(nodo, bufrn)
-    if nodo:type() == "fenced_code_block" and nodo_contem_links(nodo, bufrn) then
-        return nodo
-    end
-    for nodo_filho in nodo:iter_children() do
-        local bloco_links = encontra_bloco_de_links_recursivamente(nodo_filho, bufrn)
-        if bloco_links then
-            return bloco_links
-        end
-    end
-    return nil
-end
-
--- Função principal para encontrar o bloco de links no buffer atual.
-local function encontra_bloco_de_links_no_buffer_atual()
-    local bufrn = get_buffer_atual()
-    local root = get_arvore_de_sintaxe(bufrn)
-    local nodo = encontra_bloco_de_links_recursivamente(root, bufrn)
-    if nodo then
-        local link_header_lines = get_node_text(nodo, bufrn)
-        return link_header_lines
-    end
-    return nil
-end
-
--- Função para obter os links link_header
-local function get_links_from_link_header(link_header)
-    print(' -> Iniciando Processamento de Links')
-    -- Cria uma tabela para armazenar os links
+local function get_links_from_lines(lines)
     local links = {}
     local unique_links = {}
-    if type (link_header) == "table" and #link_header > 1 then
-        print(' -> Link Header com ' .. (#link_header) .. ' links')
-        -- itera sobre as linhas do bloco, começando da segunda linha e terminando na penúltima
-        -- para ignorar as linhas de link_header e link_tail
-        for i = 2, #link_header - 1 do
-            -- Adiciona a linha atual ao bloco de links
-            local link = link_header[i]:trim()
-            print(' -> Link: ' .. link)
-            if link:trim() ~= "" and not unique_links[link] then
-                unique_links[link] = true
-                table.insert(links, link)
-                print(' -> Link Adicionado: ' .. link)
-                end
-            end
-        else
-            print(' -> Link Header com 0 links')
-        end
-        print(' Número de Links: ' .. #links)
+    local block_start, block_end = find_fenced_block_bounds(lines, link_line_head, link_line_tail)
+
+    if not block_start or not block_end or block_end <= block_start then
         return links
     end
-        if not string.trim then
-            function string.trim(s)
-                return s:match("^%s*(.-)%s*$")
-            end
-end
 
--- Função para processar os arquivos  e retornar os links
-local function processa_nota(nota)
-    print(' -> Iniciando Processamento de Nota: ' .. nota)
-    print('')
-    local nota_path = tempestade_path .. nota
-    local link_header = encontra_bloco_de_links_no_buffer_atual()
-    local links = get_links_from_link_header(link_header)
-    return links, nota_path
-end
-
--- Função para Adicionar link para o nota_fonte no arquivo alvo
-local function add_fonte_em_links_de_alvo(nota_fonte, nota_alvo)
-    local links_de_alvo, nota_alvo_path = processa_nota(nota_alvo)
-    -- Verifica se o link já existe no bloco de links
-    local link_em_alvo_existe = false
-    if vim.tbl_contains(links_de_alvo, nota_fonte) then
-        link_em_alvo_existe = true
+    for index = block_start + 1, block_end - 1 do
+        local link = trim(lines[index])
+        if link ~= "" and not unique_links[link] then
+            unique_links[link] = true
+            table.insert(links, link)
+        end
     end
-    -- se não houver nota_alvo em links
-    if not link_em_alvo_existe then
-        local nota_alvo_content = vim.fn.readfile(nota_alvo_path)
-        -- Adiciona a palavra ao bloco de links do arquivo alvo
-        table.insert(nota_alvo_content, 4, nota_fonte)
-        vim.fn.writefile(nota_alvo_content, nota_alvo_path)
-    end
+
+    return links
 end
 
--- Função para Adicionar Link Biderecional entre dois arquivos
+local function read_links_from_note_path(nota_path)
+    if vim.fn.filereadable(nota_path) == 0 then
+        return {}
+    end
+    local lines = vim.fn.readfile(nota_path)
+    return get_links_from_lines(lines)
+end
+
+local function append_link_to_note_path(nota_path, link_ref)
+    local normalized_link = trim(link_ref)
+    if normalized_link == "" then
+        return false
+    end
+
+    local nota_content = {}
+    if vim.fn.filereadable(nota_path) == 1 then
+        nota_content = vim.fn.readfile(nota_path)
+    end
+
+    if vim.tbl_contains(get_links_from_lines(nota_content), normalized_link) then
+        return false
+    end
+
+    local block_start, block_end = find_fenced_block_bounds(nota_content, link_line_head, link_line_tail)
+    if not block_start or not block_end then
+        if #nota_content > 0 and trim(nota_content[#nota_content]) ~= "" then
+            table.insert(nota_content, "")
+        end
+        table.insert(nota_content, link_line_head)
+        table.insert(nota_content, normalized_link)
+        table.insert(nota_content, link_line_tail)
+    else
+        table.insert(nota_content, block_end, normalized_link)
+    end
+
+    vim.fn.writefile(nota_content, nota_path)
+    return true
+end
+
+local capitalizeFirstLetter
+
+local function ensure_note_exists(nota_alvo)
+    local nota_alvo_path = tempestade_path .. nota_alvo
+    if vim.fn.filereadable(nota_alvo_path) == 0 then
+        print("Nota '" ..  nota_alvo .. "' não existe, criando...")
+        local titulo = "# " .. capitalizeFirstLetter(nota_alvo)
+        vim.fn.writefile({titulo, '', link_line_head, link_line_tail, ''}, nota_alvo_path)
+        print("Nota '" ..  nota_alvo .. "' criada com sucesso!")
+    end
+    return nota_alvo_path
+end
+
+local function add_bidirectional_link(nota_fonte, nota_alvo)
+    local nota_fonte_path = tempestade_path .. nota_fonte
+    local nota_alvo_path = tempestade_path .. nota_alvo
+
+    append_link_to_note_path(nota_fonte_path, nota_alvo)
+    append_link_to_note_path(nota_alvo_path, nota_fonte)
+end
+
+local function add_unidirectional_source_link(source_ref, nota_alvo)
+    local nota_alvo_path = tempestade_path .. nota_alvo
+    append_link_to_note_path(nota_alvo_path, source_ref)
+end
+
 local function add_link_biderecional(nota_fonte, nota_alvo)
-    local links_de_fonte, nota_fonte_path = processa_nota(nota_fonte)
-    print('Nota Fonte: ' .. nota_fonte)
-    print('Nota Alvo: ' .. nota_alvo)
-    local link_em_fonte_existe = false
-    -- checa se bloco de links de nota_fonte possui link para nota_alvo
-    if vim.tbl_contains(links_de_fonte, nota_alvo) then
-        link_em_fonte_existe = true
-        print('Link em Fonte Existe')
-        print('Links em Fonte: ' .. table.concat(links_de_fonte, ', '))
-    end
-    -- se nota_fonte não possui link para nota_alvo
-    if not link_em_fonte_existe then
-        print('Link em Fonte Não Existe')
-        -- Adiciona a nota_alvo ao bloco de links da nota_fonte
-        local nota_fonte_content = vim.fn.readfile(nota_fonte_path)
-        table.insert(nota_fonte_content, 4, nota_alvo)
-        vim.fn.writefile(nota_fonte_content, nota_fonte_path)
-        add_fonte_em_links_de_alvo(nota_fonte, nota_alvo)
-    end
-    print('')
+    add_bidirectional_link(nota_fonte, nota_alvo)
 end
 
 -- Transformando uma palavra é um título, Capitalize First Letter
-local function capitalizeFirstLetter(str)
+capitalizeFirstLetter = function(str)
     return (str:gsub("(%a)([%w_']*)", function(first, rest)
         return first:upper() .. rest:lower()
     end))
@@ -329,6 +409,10 @@ function M.get_tempestade_path()
     return tempestade_path
 end
 
+M.is_nota_path = is_nota_path
+M.buffer_atual_e_nota = buffer_atual_e_nota
+M.resolve_source_context = resolve_source_context
+
 -- Função para criar uma nova nota
 function M.ZettelVimNovaNota(nota_alvo)
     -- Verifica se a palavra é vazia
@@ -354,25 +438,25 @@ end
 
 -------------------- ZettelVimCreateorFind(nota_alvo) -------------------------
 -- Função para criar ou encontrar uma nota
-function M.ZettelVimCreateorFind(nota_alvo)
+function M.ZettelVimCreateorFind(nota_alvo, source_context)
     -- Verifica se a palavra é vazia
     if nota_alvo == "" then
         print("Sem palavras, tsc tsc tsc...")
         return
     end
-    -- Pega o caminho da nota_alvo
-    local nota_alvo_path = tempestade_path .. nota_alvo
-    -- Checa se a nota_alvo existe
-    if vim.fn.filereadable(nota_alvo_path) == 0 then
-        print("Nota '" ..  nota_alvo .. "' não existe, criando...")
-        local titulo = "# " .. capitalizeFirstLetter(nota_alvo)
-        vim.fn.writefile({titulo, '', link_line_head, link_line_tail, ''}, nota_alvo_path)
-        print("Nota '" ..  nota_alvo .. "' criada com sucesso!")
+    ensure_note_exists(nota_alvo)
+
+    source_context = source_context or resolve_source_context()
+
+    if source_context.is_nota then
+        local nota_fonte = source_context.source_note_name or vim.fn.expand("%:t")
+        add_bidirectional_link(nota_fonte, nota_alvo)
+        print("Nota '" ..  nota_alvo .. "' conectada com sucesso à nota '" .. nota_fonte .. "'!")
+    else
+        add_unidirectional_source_link(source_context.source_ref, nota_alvo)
+        print("Nota '" ..  nota_alvo .. "' conectada com sucesso à fonte '" .. source_context.source_ref .. "'!")
     end
-    local nota_fonte = vim.fn.expand("%:t")
-    -- Adiciona link biderecional entre nota_fonte e nota_alvo
-    add_link_biderecional(nota_fonte, nota_alvo)
-    print("Nota '" ..  nota_alvo .. "' conectada com sucesso à nota '" .. nota_fonte .. "'!")
+
     add_link_em_indice("tempesta cerebralis", nota_alvo)
 end
 

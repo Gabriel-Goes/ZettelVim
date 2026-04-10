@@ -10,28 +10,34 @@
 local utils = require('zettelvim.utils')
 local tempestade_path = utils.get_tempestade_path()
 local ZettelVimCreateorFind = utils.ZettelVimCreateorFind
+local resolve_source_context = utils.resolve_source_context
 local wikipedia_lang = 'pt'
 -------------------------------------------------------------------------------
 local M = {}
 function M.NormalCall()
     print('Normal Call')
-    -- Salva o arquivo atual
-    vim.cmd("w")
+    local source_context = resolve_source_context()
+    if source_context.is_nota then
+        vim.cmd("w")
+    end
     local nota_alvo = vim.fn.expand("<cword>")
     print('Nota Alvo: ' .. nota_alvo)
-    ZettelVimCreateorFind(nota_alvo)
+    ZettelVimCreateorFind(nota_alvo, source_context)
     -- abre o arquivo alvo
     vim.cmd("e " .. tempestade_path .. nota_alvo)
 end
 
 function M.VisualCall()
-    vim.cmd("w") -- Salva o arquivo atual
+    local source_context = resolve_source_context()
+    if source_context.is_nota then
+        vim.cmd("w")
+    end
     vim.cmd("normal! \"ay") -- Yank a seleção do buffer no visual mode, e apenas a seleção ao registro 'a'
     local selection = vim.fn.getreg("a") -- Imediatamente após o yan, obtém a seleção do registro 'a' e armazena na variável selection
     selection = selection:gsub("\n", " ") -- Substitui quebras de linha por espaços
     selection = selection:gsub("%c", " ") -- Substitui ^@ por espaços
     print('Seleção atual: ' .. selection) -- Imprime a seleção atual
-    ZettelVimCreateorFind(selection) -- Chama a função ZettelVimCreateorFind com a seleção
+    ZettelVimCreateorFind(selection, source_context) -- Chama a função ZettelVimCreateorFind com a seleção
     vim.fn.setreg("a", "") -- limpa o registro 'a'
     vim.cmd("e " .. tempestade_path .. selection) -- abre o arquivo alvo
 end
