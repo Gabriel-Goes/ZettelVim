@@ -1,7 +1,9 @@
 # Buffer Source Guard Tasks
 
 **Design**: `.specs/features/001-e382-buftype-guard/design.md`
-**Status**: Draft
+**Status**: Validated
+**Audit**: `.specs/features/001-e382-buftype-guard/audit-T1-T7.md`
+**Validation**: `.specs/features/001-e382-buftype-guard/validation-T8-T10.md`
 
 ---
 
@@ -282,24 +284,29 @@ rg -n "resolve_source_context|ZettelVimCreateorFind|vim.cmd\\(\"w\"\\)|NormalCal
 
 **Done when**:
 
-- [ ] `utils.lua` carrega sem erro de sintaxe
-- [ ] `config.lua` carrega sem erro de sintaxe
-- [ ] `require('zettelvim.config')` continua resolvendo
+- [x] `utils.lua` carrega sem erro de sintaxe
+- [x] `config.lua` carrega sem erro de sintaxe
+- [x] `require('zettelvim.config')` continua resolvendo
 
 **Verify**:
 
 ```bash
-nvim --headless -u NONE "+set rtp+=/home/ggrl/projetos/ZettelVim" "+lua require('zettelvim.utils')" "+lua require('zettelvim.config')" +q
+env NVIM_TEMPESTADE=/tmp/zettelvim-test-vault/ nvim --headless -u NONE -i NONE -n \
+  "+set rtp+=/home/ggrl/projetos/ZettelVim" \
+  "+lua require('zettelvim.utils')" \
+  "+lua require('zettelvim.config')" \
+  "+qall!"
 ```
 
 **Expected**: comando encerra com status 0 e sem stack trace Lua.
+**Observed**: validado com status 0. Ver `.specs/features/001-e382-buftype-guard/validation-T8-T10.md`.
 
 ---
 
-### T9: Validar o cenário A manualmente em uma nota real
+### T9: Validar o cenário A em harness headless com nota real
 
 **What**: provar que o comportamento antigo foi preservado quando o buffer fonte é uma nota dentro de `tempestade_path`.
-**Where**: validação manual no Neovim
+**Where**: harness headless do Neovim com vault temporário
 **Depends on**: T8
 **Reuses**: passos do cenário A descritos em `spec.md`
 
@@ -310,31 +317,32 @@ nvim --headless -u NONE "+set rtp+=/home/ggrl/projetos/ZettelVim" "+lua require(
 
 **Done when**:
 
-- [ ] A nota fonte pode ser salva normalmente
-- [ ] A nota alvo é criada se não existir
-- [ ] O link `nota_fonte -> nota_alvo` é escrito
-- [ ] O link `nota_alvo -> nota_fonte` é escrito
-- [ ] O índice `tempesta cerebralis` incrementa a nota alvo
+- [x] A nota fonte pode ser salva normalmente
+- [x] A nota alvo é criada se não existir
+- [x] O link `nota_fonte -> nota_alvo` é escrito
+- [x] O link `nota_alvo -> nota_fonte` é escrito
+- [x] O índice `tempesta cerebralis` incrementa a nota alvo
 
 **Verify**:
 
 ```bash
-nvim
+Ver comando reproduzível em `.specs/features/001-e382-buftype-guard/validation-T8-T10.md`.
 ```
 
 **Expected**:
 
-- abrir uma nota dentro de `tempestade_path`
-- acionar `<leader>qf` ou `qf`
-- confirmar que não há regressão do fluxo antigo
-- confirmar no filesystem que fonte e alvo foram atualizados
+- a nota fonte é salva sem erro
+- a nota alvo é criada e recebe o backlink para a fonte
+- a nota fonte recebe o link para o alvo
+- o índice incrementa `nota_alvo | 1`
+- `validation-T8-T10.md` registra `scenario_a_ok`
 
 ---
 
-### T10: Validar o cenário B manualmente em buffer não-nota
+### T10: Validar o cenário B em harness headless com buffer não-nota
 
 **What**: provar que buffers especiais não sofrem `:write`, não são alterados, e ainda assim geram a nota alvo com referência unidirecional e atualização do índice.
-**Where**: validação manual no Neovim
+**Where**: harness headless do Neovim com buffers `terminal` e `nofile`
 **Depends on**: T9
 **Reuses**: reprodução descrita em `spec.md`
 
@@ -345,18 +353,25 @@ nvim
 
 **Done when**:
 
-- [ ] `qf` ou `qff` em buffer não-nota não dispara `E382`
-- [ ] O buffer fonte não é modificado
-- [ ] A nota alvo é criada se não existir
-- [ ] Em terminal, a nota alvo recebe referência rica com `bufname` e `argv0` quando disponível
-- [ ] Em buffers não-nota sem metadados ricos, o fallback continua legível e estável
-- [ ] O índice `tempesta cerebralis` incrementa a nota alvo
+- [x] `qf` ou `qff` em buffer não-nota não dispara `E382`
+- [x] O buffer fonte não é modificado
+- [x] A nota alvo é criada se não existir
+- [x] Em terminal, a nota alvo recebe referência rica com `bufname` e `argv0` quando disponível
+- [x] Em buffers não-nota sem metadados ricos, o fallback continua legível e estável
+- [x] O índice `tempesta cerebralis` incrementa a nota alvo
 
 **Verify**:
 
 ```bash
-nvim
+Ver comando reproduzível em `.specs/features/001-e382-buftype-guard/validation-T8-T10.md`.
 ```
+
+**Expected**:
+
+- o subcenário `terminal` registra `scenario_b_ok` sem `E382`
+- a nota `AlvoTerminal` recebe `term://... [argv:...]`
+- o subcenário `nofile` grava fallback legível `{user}@{host} {cwd} (nofile)`
+- `validation-T8-T10.md` registra os dois resultados observados
 
 **Expected**:
 
