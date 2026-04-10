@@ -1,6 +1,12 @@
 # ZettelVim
 
+```links
+INSTALL.md
+```
+
 ZettelVim é um ambiente de escrita de notas para estudos no Neovim, usando Lua e Treesitter. Insparado no método Zettelkasten de Niklas Luhmannvisa criar um ecossistema de conhecimento interconectado, onde cada nota pode ser facilmente acessada, criada e interligada, formando uma rede robusta de informações.
+
+Este diretório tem muita correlação com os arquivos de ~/vidia/docs/TempestaCerebralis/ e ~/vidia/docs/TempestadeCerebral/
 
 ## Características
 
