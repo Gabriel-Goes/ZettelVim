@@ -28,17 +28,15 @@ env NVIM_TEMPESTADE=/tmp/zettelvim-audit-t8/ nvim --headless -u NONE -i NONE -n 
 
 **Resultado:** exit status 0, sem stack trace.
 
-### Nota sobre pré-condição
+### Nota sobre pré-condição (RESOLVIDO)
 
-O diretório do vault **precisa existir antes** de executar o teste. Sem `mkdir -p` prévio, `utils.lua:14-18` cria o diretório e faz `return` sem retornar o módulo `M`, causando:
+O diretório do vault **precisava existir antes** de executar o teste. Sem `mkdir -p` prévio, `utils.lua:14-18` criava o diretório e fazia `return` sem retornar o módulo `M`, causando:
 
 ```
 E5108: Lua: config.lua:11: attempt to index local 'utils' (a boolean value)
 ```
 
-O Codex não documentou essa pré-condição explicitamente no comando de T8, mas o vault de teste (`/tmp/zettelvim-test-vault/`) provavelmente já existia de execuções anteriores. O comando atualizado em `tasks.md:294` também não inclui `mkdir -p`. **Isso não é falha da implementação** — é comportamento preexistente de `utils.lua` — mas a documentação do teste deveria ser self-contained.
-
-**Severidade:** Cosmética (documentação). Não afeta o veredicto.
+**Correção aplicada:** o bare `return` em `utils.lua:18` foi removido. Agora, quando o vault não existe, o diretório é criado e o módulo continua carregando normalmente até `return M`. O teste T8 passa com vault inexistente sem necessidade de `mkdir -p` prévio.
 
 ---
 
@@ -191,17 +189,15 @@ Match: referência rica do terminal e fallback do nofile estão corretos e legí
 |------|--------|
 | `lua/zettelvim/utils.lua` não alterado pelo Codex nesta etapa | OK — `git diff 574c9ae..HEAD -- lua/` vazio |
 | `lua/zettelvim/config.lua` não alterado pelo Codex nesta etapa | OK — `git diff 574c9ae..HEAD -- lua/` vazio |
-| Nenhum arquivo fora de `.specs/` alterado | OK — diff mostra apenas 3 arquivos em `.specs/` |
+| Nenhum arquivo fora de `.specs/` alterado na etapa T8-T10 | OK — `git diff 574c9ae..4c914ee` mostra apenas 3 arquivos em `.specs/`. Nota: commit 1d83ab3 alterou `.gitignore` e `nvim.log`, mas isso pertence à etapa anterior |
 
 ---
 
 ## Observações Pendentes (carregadas do audit T1-T7)
 
-Estas observações não-bloqueantes continuam válidas e foram corretamente referenciadas pelo Codex em `validation-T8-T10.md:120-122`:
+1. **N1 — ANSI em VisualCall():** `vim.cmd("normal! \"ay")` em buffer terminal pode capturar escape sequences. Out-of-scope da spec. **Continua como dívida técnica.**
 
-1. **N1 — ANSI em VisualCall():** `vim.cmd("normal! \"ay")` em buffer terminal pode capturar escape sequences. Out-of-scope da spec.
-
-2. **N2 — Espaços em nota_alvo:** `vim.cmd("e " .. tempestade_path .. nota_alvo)` sem `fnameescape`. Preexistente, não é regressão.
+2. **N2 — Espaços em nota_alvo:** ~~`vim.cmd("e " .. tempestade_path .. nota_alvo)` sem `fnameescape`.~~ **RESOLVIDO:** `config.lua:27` (NormalCall) e `config.lua:43` (VisualCall) agora usam `vim.fn.fnameescape()`. Adicionalmente, `selection:trim()` foi aplicado em VisualCall (linha 39) para remover espaços residuais.
 
 ---
 
@@ -213,4 +209,9 @@ Estas observações não-bloqueantes continuam válidas e foram corretamente ref
 | T9 | **PASS** |
 | T10 | **PASS** |
 
-**Resultado global: PASS** — A validação do Codex foi reproduzida independentemente. Todos os cenários passam, os artefatos são consistentes, e nenhuma alteração de código foi feita nesta etapa. A feature 001-e382-buftype-guard está **completa e validada**.
+**Resultado global: PASS** — A validação do Codex foi reproduzida independentemente. Todos os cenários passam. Duas correções adicionais foram aplicadas durante a revisão da auditoria:
+
+1. `utils.lua:18` — bare `return` removido (bug: módulo não carregava com vault inexistente)
+2. `config.lua:27,43` — `fnameescape()` aplicado (N2: nomes com espaços quebravam `:e`)
+
+A feature 001-e382-buftype-guard está **fechada**.

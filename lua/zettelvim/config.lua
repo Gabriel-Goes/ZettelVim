@@ -36,6 +36,7 @@ function M.VisualCall()
     local selection = vim.fn.getreg("a") -- Imediatamente após o yan, obtém a seleção do registro 'a' e armazena na variável selection
     selection = selection:gsub("\n", " ") -- Substitui quebras de linha por espaços
     selection = selection:gsub("%c", " ") -- Substitui ^@ por espaços
+    selection = selection:trim() -- Remove espaços residuais no começo/fim da seleção
     print('Seleção atual: ' .. selection) -- Imprime a seleção atual
     ZettelVimCreateorFind(selection, source_context) -- Chama a função ZettelVimCreateorFind com a seleção
     vim.fn.setreg("a", "") -- limpa o registro 'a'

@@ -1,7 +1,7 @@
 # Buffer Source Guard Tasks
 
 **Design**: `.specs/features/001-e382-buftype-guard/design.md`
-**Status**: Validated
+**Status**: Closed
 **Audit**: `.specs/features/001-e382-buftype-guard/audit-T1-T7.md`
 **Validation**: `.specs/features/001-e382-buftype-guard/validation-T8-T10.md`
 
