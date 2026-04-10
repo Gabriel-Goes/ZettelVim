@@ -24,7 +24,7 @@ function M.NormalCall()
     print('Nota Alvo: ' .. nota_alvo)
     ZettelVimCreateorFind(nota_alvo, source_context)
     -- abre o arquivo alvo
-    vim.cmd("e " .. tempestade_path .. nota_alvo)
+    vim.cmd("e " .. vim.fn.fnameescape(tempestade_path .. nota_alvo))
 end
 
 function M.VisualCall()
@@ -39,7 +39,7 @@ function M.VisualCall()
     print('Seleção atual: ' .. selection) -- Imprime a seleção atual
     ZettelVimCreateorFind(selection, source_context) -- Chama a função ZettelVimCreateorFind com a seleção
     vim.fn.setreg("a", "") -- limpa o registro 'a'
-    vim.cmd("e " .. tempestade_path .. selection) -- abre o arquivo alvo
+    vim.cmd("e " .. vim.fn.fnameescape(tempestade_path .. selection)) -- abre o arquivo alvo
 end
 
 function M.openWikipediaPage(text)
